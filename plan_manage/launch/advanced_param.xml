@@ -1,12 +1,13 @@
 <launch>
+  <!-- some basic parameters are set here, and other advanced parameters are set later -->
   <arg name="map_size_x_"/>
   <arg name="map_size_y_"/>
   <arg name="map_size_z_"/>
 
   <arg name="odometry_topic"/>
-  <arg name="camera_pose_topic"/>
+  <arg name="camera_pose_topic" value="deprecated"/>
   <arg name="depth_topic"/>
-  <arg name="cloud_topic"/>
+  <arg name="cloud_topic" value="deprecated"/>
 
   <arg name="cx"/>
   <arg name="cy"/>
@@ -15,26 +16,36 @@
 
   <arg name="max_vel"/>
   <arg name="max_acc"/>
-  <arg name="planning_horizon"/>
 
-  <arg name="point_num"/>
-  <arg name="point0_x"/>
-  <arg name="point0_y"/>
-  <arg name="point0_z"/>
-  <arg name="point1_x"/>
-  <arg name="point1_y"/>
-  <arg name="point1_z"/>
-  <arg name="point2_x"/>
-  <arg name="point2_y"/>
-  <arg name="point2_z"/>
-  <arg name="point3_x"/>
-  <arg name="point3_y"/>
-  <arg name="point3_z"/>
-  <arg name="point4_x"/>
-  <arg name="point4_y"/>
-  <arg name="point4_z"/>
+  <!--always set to 1.5 times grater than sensing horizen-->
+  <arg name="planning_horizon"  value="7.5" />
 
-  <arg name="flight_type"/>
+    <arg name="point_num" value="5" />
+    <arg name="point0_x" value="5.0" />
+    <arg name="point0_y" value="7.0" />
+    <arg name="point0_z" value="2.0" />
+    
+    <arg name="point1_x" value="6.0" />
+    <arg name="point1_y" value="0.0" />
+    <arg name="point1_z" value="1.5" />
+
+    <arg name="point2_x" value="8.0" />
+    <arg name="point2_y" value="-8.0" />
+    <arg name="point2_z" value="1.5" />
+
+    <arg name="point3_x" value="0.0" />
+    <arg name="point3_y" value="-15.0" />
+    <arg name="point3_z" value="1.0" />
+
+    <arg name="point4_x" value="-15.0" />
+    <arg name="point4_y" value="0.0" />
+    <arg name="point4_z" value="1.0" />
+
+  <!-- 1: use 2D Nav Goal to select goal  -->
+  <!-- 2: use global waypoints below  -->
+  <arg name="flight_type" value="1" />
+
+  <arg name="obstacles_inflation"/>
 
   <!-- main node -->
   <node pkg="ego_planner" name="ego_planner_node" type="ego_planner_node" output="screen">
@@ -76,7 +87,7 @@
     <param name="grid_map/local_update_range_x"  value="5.5" /> 
     <param name="grid_map/local_update_range_y"  value="5.5" /> 
     <param name="grid_map/local_update_range_z"  value="4.5" /> 
-    <param name="grid_map/obstacles_inflation"     value="0.099" /> 
+    <param name="grid_map/obstacles_inflation"     value="$(arg obstacles_inflation)" /> 
     <param name="grid_map/local_map_margin" value="30"/>
     <param name="grid_map/ground_height"        value="-0.01"/>
     <!-- camera parameter -->
