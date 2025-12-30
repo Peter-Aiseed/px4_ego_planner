@@ -107,7 +107,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES px4_ego_planner
-#  CATKIN_DEPENDS geometry_msgs mavros_msgs nav_msgs roscpp std_msgs
+  CATKIN_DEPENDS geometry_msgs mavros_msgs nav_msgs roscpp std_msgs
 #  DEPENDS system_lib
 )
 
@@ -206,3 +206,7 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+add_executable(mode_transition_node src/flight_mode_transition.cpp)
+target_link_libraries(mode_transition_node ${catkin_LIBRARIES})
+add_executable(setgoal_node src/setgoal_node.cpp)
+target_link_libraries(setgoal_node ${catkin_LIBRARIES})
