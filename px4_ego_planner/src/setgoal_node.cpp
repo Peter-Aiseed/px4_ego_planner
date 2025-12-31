@@ -13,9 +13,9 @@ int main(int argc, char** argv)
   std::string topic;
   bool latch;
 
-  pnh.param("point_x", point_x, 10.0);
+  pnh.param("point_x", point_x, 15.0);
   pnh.param("point_y", point_y, 0.0);
-  pnh.param("point_z", point_z, 1.0);
+  pnh.param("point_z", point_z, 1.5);
   pnh.param("pub_hz", pub_hz, 1.0);                 // 默认 1Hz（按需改）
   pnh.param("frame_id", frame_id, std::string("map"));
   pnh.param("topic", topic, std::string("/move_base_simple/goal"));
@@ -36,7 +36,7 @@ int main(int argc, char** argv)
     desired_point.pose.position.z = point_z;
 
     sp_pub.publish(desired_point);
-    ROS_INFO("Send a point...");
+    ROS_INFO("Send a goal point: [%.1f, %.1f, %.1f]", point_x, point_y, point_z);
 
     ros::spinOnce();
     rate.sleep();
