@@ -5,10 +5,11 @@
 #include "std_msgs/Empty.h"
 #include "visualization_msgs/Marker.h"
 #include <ros/ros.h>
+#include <mavros_msgs/PositionTarget.h>
 
-ros::Publisher pos_cmd_pub;
+mavros_msgs::PositionTarget px4_cmd;
+ros::Publisher px4_pos_cmd_pub;
 
-quadrotor_msgs::PositionCommand cmd;
 double pos_gain[3] = {0, 0, 0};
 double vel_gain[3] = {0, 0, 0};
 
@@ -204,29 +205,27 @@ void cmdCallback(const ros::TimerEvent &e)
   }
   time_last = time_now;
 
-  cmd.header.stamp = time_now;
-  cmd.header.frame_id = "world";
-  cmd.trajectory_flag = quadrotor_msgs::PositionCommand::TRAJECTORY_STATUS_READY;
-  cmd.trajectory_id = traj_id_;
+  px4_cmd.header.stamp = time_now;
+  px4_cmd.coordinate_frame = FRAME_LOCAL_NED;
 
-  cmd.position.x = pos(0);
-  cmd.position.y = pos(1);
-  cmd.position.z = pos(2);
+  px4_cmd.position.x = pos(0);
+  px4_cmd.position.y = pos(1);
+  px4_cmd.position.z = pos(2);
 
-  cmd.velocity.x = vel(0);
-  cmd.velocity.y = vel(1);
-  cmd.velocity.z = vel(2);
+  px4_cmd.velocity.x = vel(0);
+  px4_cmd.velocity.y = vel(1);
+  px4_cmd.velocity.z = vel(2);
 
-  cmd.acceleration.x = acc(0);
-  cmd.acceleration.y = acc(1);
-  cmd.acceleration.z = acc(2);
+  px4_cmd.acceleration_or_force.x = acc(0);
+  px4_cmd.acceleration_or_force.y = acc(1);
+  px4_cmd.acceleration_or_force.z = acc(2);
 
-  cmd.yaw = yaw_yawdot.first;
-  cmd.yaw_dot = yaw_yawdot.second;
+  px4_cmd.yaw = yaw_yawdot.first;
+  px4_cmd.yaw_rate = yaw_yawdot.second;
+
+  px4_pos_cmd_pub.publish(cmd);
 
   last_yaw_ = cmd.yaw;
-
-  pos_cmd_pub.publish(cmd);
 }
 
 int main(int argc, char **argv)
@@ -237,7 +236,7 @@ int main(int argc, char **argv)
 
   ros::Subscriber bspline_sub = node.subscribe("planning/bspline", 10, bsplineCallback);
 
-  pos_cmd_pub = node.advertise<quadrotor_msgs::PositionCommand>("/position_cmd", 50);
+  px4_pos_cmd_pub = node.advertise<mavros_msgs::PositionTarget>("/mavros/setpoint_raw/local", 20);
 
   ros::Timer cmd_timer = node.createTimer(ros::Duration(0.01), cmdCallback);
 
