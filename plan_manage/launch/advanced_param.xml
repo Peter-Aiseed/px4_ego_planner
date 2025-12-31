@@ -18,7 +18,7 @@
   <arg name="max_acc"/>
 
   <!--always set to 1.5 times grater than sensing horizen-->
-  <arg name="planning_horizon"  value="7.5" />
+  <arg name="planning_horizon"/>
 
     <arg name="point_num" value="5" />
     <arg name="point0_x" value="5.0" />
