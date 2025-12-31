@@ -25,6 +25,11 @@ Back to previous level of directory and build this project.
 cd ..
 catkin build px4_ego_planner
 ```
+Finally, source the catkin setup.bash so that the system can find your rospacks.
+```
+echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+```
 # Running
 Open your terminal and spilt it into four windows (Tmux or Terminator are good tools).
 1. In the first window, enter this command to launch PX4, MAVROS, simulator, and RVIZ. Perhaps you need to wait few minutes, since the first time to load a new Gazebo world should take some time.
