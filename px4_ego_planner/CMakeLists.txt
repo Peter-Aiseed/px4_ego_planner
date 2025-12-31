@@ -12,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES px4_ego_planner
-  CATKIN_DEPENDS ego_planner
+  CATKIN_DEPENDS ego_planner waypoint_generator
 #  DEPENDS system_lib
 )
 
