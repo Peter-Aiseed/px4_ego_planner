@@ -1,7 +1,6 @@
 #include "bspline_opt/uniform_bspline.h"
 #include "nav_msgs/Odometry.h"
 #include "ego_planner/Bspline.h"
-#include "quadrotor_msgs/PositionCommand.h"
 #include "std_msgs/Empty.h"
 #include "visualization_msgs/Marker.h"
 #include <ros/ros.h>
@@ -206,7 +205,7 @@ void cmdCallback(const ros::TimerEvent &e)
   time_last = time_now;
 
   px4_cmd.header.stamp = time_now;
-  px4_cmd.coordinate_frame = FRAME_LOCAL_NED;
+  px4_cmd.coordinate_frame = 1;
 
   px4_cmd.position.x = pos(0);
   px4_cmd.position.y = pos(1);
@@ -223,9 +222,9 @@ void cmdCallback(const ros::TimerEvent &e)
   px4_cmd.yaw = yaw_yawdot.first;
   px4_cmd.yaw_rate = yaw_yawdot.second;
 
-  px4_pos_cmd_pub.publish(cmd);
+  px4_pos_cmd_pub.publish(px4_cmd);
 
-  last_yaw_ = cmd.yaw;
+  last_yaw_ = px4_cmd.yaw;
 }
 
 int main(int argc, char **argv)
@@ -239,15 +238,6 @@ int main(int argc, char **argv)
   px4_pos_cmd_pub = node.advertise<mavros_msgs::PositionTarget>("/mavros/setpoint_raw/local", 20);
 
   ros::Timer cmd_timer = node.createTimer(ros::Duration(0.01), cmdCallback);
-
-  /* control parameter */
-  cmd.kx[0] = pos_gain[0];
-  cmd.kx[1] = pos_gain[1];
-  cmd.kx[2] = pos_gain[2];
-
-  cmd.kv[0] = vel_gain[0];
-  cmd.kv[1] = vel_gain[1];
-  cmd.kv[2] = vel_gain[2];
 
   nh.param("traj_server/time_forward", time_forward_, -1.0);
   last_yaw_ = 0.0;
