@@ -85,7 +85,7 @@ enum class Stage
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "simple_mode_manager");
+  ros::init(argc, argv, "flight_mode_manager");
   ros::NodeHandle nh;
   ros::NodeHandle pnh("~");
 

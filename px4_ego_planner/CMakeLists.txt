@@ -14,7 +14,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(mode_transition_node src/flight_mode_transition.cpp)
-target_link_libraries(mode_transition_node ${catkin_LIBRARIES})
-add_executable(setgoal_node src/setgoal.cpp)
+add_executable(flight_mode_manager src/flight_mode_manager.cpp)
+target_link_libraries(flight_mode_manager ${catkin_LIBRARIES})
+add_executable(setgoal_node src/setgoal_node.cpp)
 target_link_libraries(setgoal_node ${catkin_LIBRARIES})

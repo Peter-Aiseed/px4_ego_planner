@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "send_points_manual");
+  ros::init(argc, argv, "setgoal_node");
   ros::NodeHandle nh;
   ros::NodeHandle pnh("~");
 
@@ -18,7 +18,7 @@ int main(int argc, char** argv)
   pnh.param("point_z", point_z, 1.0);
   pnh.param("pub_hz", pub_hz, 1.0);                 // 默认 1Hz（按需改）
   pnh.param("frame_id", frame_id, std::string("map"));
-  pnh.param("topic", topic, std::string("/manual/setpoint"));
+  pnh.param("topic", topic, std::string("/move_base_simple/goal"));
   pnh.param("latch", latch, false);
 
   ros::Publisher sp_pub = nh.advertise<geometry_msgs::PoseStamped>(topic, 10, latch);
@@ -36,6 +36,7 @@ int main(int argc, char** argv)
     desired_point.pose.position.z = point_z;
 
     sp_pub.publish(desired_point);
+    ROS_INFO("Send a point...");
 
     ros::spinOnce();
     rate.sleep();

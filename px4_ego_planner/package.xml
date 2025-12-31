@@ -51,24 +51,18 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <!-- catkin will try to build the following package if it cannot find them -->
-  <!-- but it requires the corresponding packages also exist on the same workspace -->
-
-  <!-- the packages I have to install when using this package -->
   <build_depend>geometry_msgs</build_depend>
   <build_depend>mavros_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>std_msgs</build_depend>
 
-  <!-- people must install these package when calling my package -->
   <build_export_depend>geometry_msgs</build_export_depend>
   <build_export_depend>mavros_msgs</build_export_depend>
   <build_export_depend>nav_msgs</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
 
-  <!-- the required packages for running my nodes -->
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>mavros_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
