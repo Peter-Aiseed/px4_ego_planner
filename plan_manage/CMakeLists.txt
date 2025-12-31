@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   traj_utils
   message_generation
   cv_bridge
+  mavros_msgs
 )
 
 # Generate messages in the 'msg' folder
