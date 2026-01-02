@@ -1,4 +1,4 @@
-# Description
+# Introduction
 This project forks from [ego_planner](https://github.com/ZJU-FAST-Lab/ego-planner.git), aiming to extend it to a PX4-compatiable version. Up to now, the implementation of ego-planner on Gazebo simulator has been completed! The real-world test will be conducted soon.
 # Environment
 A quick overview of the required configuration.
@@ -31,8 +31,8 @@ echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 ```
 # Running
-Open your terminal and split it into four windows (Tmux or Terminator are good tools).
-1. In the first window, enter this command to launch the PX4, MAVROS, simulator, and RViz. Perhaps you need to wait few minutes, since the first time to load a new Gazebo world should take some time.
+Open a terminal and split it into four windows (Tmux or Terminator are recommended tools).
+1. In the first window, enter the following command to launch the PX4, MAVROS, Gazebo, and RViz. Note that the first launch may take a few minutes to load the Gazebo world.
 ```bash
 roslaunch px4_ego_planner run_sim.launch
 ```
@@ -45,7 +45,7 @@ rosrun px4_ego_planner flight_mode_manager
 ```bash
 roslaunch px4_ego_planner run_ego.launch
 ```
-4. Send a preset goal point in the fourth window, I have already preset a feasible goal point here. Alternatively, you can use the **2D Nav Goal** tool in Rviz to specify a goal.
+4. Send a goal point in the fourth window, I have already preset a feasible goal point in this node. Alternatively, you can use the **2D Nav Goal** tool in Rviz to specify a goal.
 ```bash
 rosrun px4_ego_planner setgoal_node 
 ``` 
