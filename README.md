@@ -20,7 +20,7 @@ Then go to the source directory and clone this repository.
 cd ~/catkin_ws/src
 git clone https://github.com/hyq123-cmd/px4_ego_planner.git
 ```
-Return to paraent directory and build the project.
+Return to the parent directory and build the project.
 ```bash
 cd ..
 catkin build px4_ego_planner

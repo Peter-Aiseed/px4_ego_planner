@@ -38,6 +38,6 @@
   <node pkg="tf" type="static_transform_publisher" name="map_to_world"
           args="0 0 0 0 0 0 world map 10"/>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find px4_ego_planner)/resource/default.rviz" required="true" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find px4_ego_planner)/resource/sim.rviz" required="true" />
 
 </launch>

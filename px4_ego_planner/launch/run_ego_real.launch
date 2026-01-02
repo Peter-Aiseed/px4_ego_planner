@@ -1,0 +1,48 @@
+<launch>
+  <arg name="map_size_x" value="40.0"/>
+  <arg name="map_size_y" value="40.0"/>
+  <arg name="map_size_z" value="1.0"/>
+  <arg name="max_vel" value="0.2" />
+  <arg name="max_acc" value="0.4" />
+  <arg name="planning_horizon" value="7.5" /> 
+  <arg name="cx" value="426.662"/>
+  <arg name="cy" value="243.136"/>
+  <arg name="fx" value="431.074"/>
+  <arg name="fy" value="431.074"/>
+  <arg name="obstacles_inflation" value = "1.0"/>
+  
+  <arg name="depth_topic" value="/quadrotor/camera/depth/image_raw"/>
+  <arg name="odom_topic" value="/mavros/local_position/odom" />
+
+  <!-- main algorithm params -->
+  <include file="$(find ego_planner)/launch/advanced_param.xml">
+    <arg name="map_size_x_" value="$(arg map_size_x)"/>
+    <arg name="map_size_y_" value="$(arg map_size_y)"/>
+    <arg name="map_size_z_" value="$(arg map_size_z)"/>
+    <arg name="odometry_topic" value="$(arg odom_topic)"/>
+    <arg name="depth_topic" value="$(arg depth_topic)"/>
+    <arg name="cx" value="$(arg cx)"/>
+    <arg name="cy" value="$(arg cy)"/>
+    <arg name="fx" value="$(arg fx)"/>
+    <arg name="fy" value="$(arg fy)"/>
+    <arg name="max_vel" value="$(arg max_vel)" />
+    <arg name="max_acc" value="$(arg max_acc)" />
+    <arg name="planning_horizon" value="$(arg planning_horizon)" /> 
+    <arg name="obstacles_inflation" value = "$(arg obstacles_inflation)"/>
+  </include>
+
+  <!-- trajectory server -->
+  <node pkg="ego_planner" name="traj_server" type="traj_server" output="screen">
+    <remap from="/position_cmd" to="planning/pos_cmd"/>
+    <remap from="/odom_world" to="$(arg odom_topic)"/>
+    <param name="traj_server/time_forward" value="1.0" type="double"/>
+  </node>
+
+  <node pkg="waypoint_generator" name="waypoint_generator" type="waypoint_generator" output="screen">
+    <remap from="~odom" to="$(arg odom_topic)"/>        
+    <remap from="~goal" to="/move_base_simple/goal"/>
+    <remap from="~traj_start_trigger" to="/traj_start_trigger" />
+    <param name="waypoint_type" value="manual-lonely-waypoint"/>    
+  </node>
+
+</launch>
