@@ -7,6 +7,7 @@ A quick overview of the required configuration.
 - Gazebo classic 11
 - The latest version of PX4
 - The latest versions of mavros, mavros_extras, mavros_msgs
+- Eigen3 library
 
 I actually installed these softwares following the guide of [PX4-Aovidance](https://github.com/PX4/PX4-Avoidance.git), so, I also strongly recommend you to refer to this project and double-check that all dependencies are installed correctly.
 # Build
