@@ -1,46 +1,45 @@
 <launch>
-  <!-- parameters for simulator -->
-  <arg name="world_path" default="$(find px4_ego_planner)/resource/sim_world/simple_obstacle.world" />
-  <arg name="gui" default="false"/>
-  <arg name="model" default="iris_depth_camera"/>
-  <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
-  <arg name="gcs_url" default=""/>   <!-- GCS link is provided by SITL -->
-  <arg name="tgt_system" default="1"/>
-  <arg name="tgt_component" default="1" />
-  <arg name="vehicle" default="quadrotor"/>
+	<!-- parameters for simulator -->
+	<arg name="world_path" default="$(find px4_ego_planner)/resource/sim_world/simple_obstacle.world" />
+	<arg name="gui" default="false"/>
+	<arg name="model" default="iris_depth_camera"/>
+	<arg name="fcu_url" default="udp://:14540@localhost:14557"/>
+	<arg name="gcs_url" default=""/>   <!-- GCS link is provided by SITL -->
+	<arg name="tgt_system" default="1"/>
+	<arg name="tgt_component" default="1" />
+	<arg name="vehicle" default="quadrotor"/>
 
-  <!-- Launch PX4 SITL -->
-  <include file="$(find px4)/launch/px4.launch" />
+	<!-- Launch PX4 SITL -->
+	<include file="$(find px4)/launch/px4.launch" />
 
-  <!-- Launch MavROS -->
-  <include file="$(find mavros)/launch/node.launch">
-    <arg name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />
-    <arg name="config_yaml" value="$(find mavros)/launch/px4_config.yaml" />
-    <arg name="fcu_url" value="$(arg fcu_url)" />
-    <arg name="gcs_url" value="$(arg gcs_url)" />
-    <arg name="tgt_system" value="$(arg tgt_system)" />
-    <arg name="tgt_component" value="$(arg tgt_component)" />
-  </include>
+	<!-- Launch MavROS -->
+	<include file="$(find mavros)/launch/node.launch">
+		<arg name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />
+		<arg name="config_yaml" value="$(find mavros)/launch/px4_config.yaml" />
+		<arg name="fcu_url" value="$(arg fcu_url)" />
+		<arg name="gcs_url" value="$(arg gcs_url)" />
+		<arg name="tgt_system" value="$(arg tgt_system)" />
+		<arg name="tgt_component" value="$(arg tgt_component)" />
+	</include>
 
-  <!-- Launch Gazebo -->
-  <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="gui" value="$(arg gui)"/>
-    <arg name="world_name" value="$(arg world_path)" />
-  </include>
+	<!-- Launch Gazebo -->
+	<include file="$(find gazebo_ros)/launch/empty_world.launch">
+		<arg name="gui" value="$(arg gui)"/>
+		<arg name="world_name" value="$(arg world_path)" />
+	</include>
 
-  <!-- Spawn vehicle model -->
-  <!-- the vehilce value is just a name, it doesn't affect the system -->
-  <node name="spawn_model" pkg="gazebo_ros" type="spawn_model" output="screen"
-          args="-sdf -database $(arg model) -model $(arg vehicle)">
-  </node>
+	<!-- Spawn vehicle model -->
+	<!-- the vehilce value is just a name, it doesn't affect the system -->
+	<node name="spawn_model" pkg="gazebo_ros" type="spawn_model" output="screen"
+			args="-sdf -database $(arg model) -model $(arg vehicle)">
+	</node>
 
-  <!-- Define a static transform from a camera internal frame to the fcu for every camera used -->
-  <node pkg="tf" type="static_transform_publisher" name="map_to_world"
-          args="0 0 0 0 0 0 world map 10"/>
+	<!-- Define a static transform from a camera internal frame to the fcu for every camera used -->
+	<node pkg="tf" type="static_transform_publisher" name="map_to_world" args="0 0 0 0 0 0 world map 10"/>
 
 	<!-- visualize robot in rviz -->
 	<node name="visualization_node" pkg="px4_ego_planner" type="visualization_node" />
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find px4_ego_planner)/resource/sim.rviz" required="true" />
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find px4_ego_planner)/resource/sim.rviz" required="true" />
 
 </launch>

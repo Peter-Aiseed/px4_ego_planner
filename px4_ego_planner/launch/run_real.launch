@@ -18,5 +18,8 @@
 	<!-- start transferring data to PX4 -->
     <node name="vins_transfer" pkg="px4_ego_planner" type="vins_transfer" output="screen" />
 
+    <!-- visualize robot in rviz -->
+    <node name="visualization_node" pkg="px4_ego_planner" type="visualization_node" />
+
 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find px4_ego_planner)/resource/real.rviz" required="true" />
 </launch>	
