@@ -7,6 +7,7 @@
 #include <Eigen/Geometry>
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
+#include <nav_msgs/Path.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <sensor_msgs/Imu.h>
 
@@ -20,6 +21,7 @@ const Eigen::Matrix3d R_LUF_FLU = (Eigen::Matrix3d() <<
 Eigen::Matrix3d R_imu;
 
 geometry_msgs::PoseStamped local_pose;
+nav_msgs::Path path;
 
 bool vins_received = false;
 bool imu_received = false;
@@ -69,7 +71,7 @@ void vins_callback(const nav_msgs::Odometry::ConstPtr& msg)
         local_pose.pose.orientation.y = q_tran.y();
         local_pose.pose.orientation.z = q_tran.z();
 		
-		ROS_INFO("camera position relative to ENU: x=%.2f, y=%.2f, z=%.2f", P_tran.x(), P_tran.y(), P_tran.z());
+		// ROS_INFO("camera position relative to ENU: x=%.2f, y=%.2f, z=%.2f", P_tran.x(), P_tran.y(), P_tran.z());
 		vins_received = true;
     }
 }
@@ -86,10 +88,13 @@ int main(int argc, char** argv)
     */
     ros::Subscriber sub_imu = nh.subscribe("/mavros/imu/data", 10, imu_callback);
     ros::Publisher pub_vio = nh.advertise<geometry_msgs::PoseStamped>("/mavros/vision_pose/pose", 10);
+	ros::Publisher pub_path = nh.advertise<nav_msgs::Path>("path", 10);
 
     ros::Rate rate(50);
 
-    local_pose.header.frame_id = "world";
+    local_pose.header.frame_id = "map";
+	path.header.stamp = ros::Time::now();
+	path.header.frame_id = "map";
 
     while(ros::ok())
     {
@@ -97,6 +102,8 @@ int main(int argc, char** argv)
         {
             local_pose.header.stamp = ros::Time::now();
             pub_vio.publish(local_pose);
+			path.poses.push_back(local_pose);
+			pub_path.publish(path);
             vins_received = false;
         }
 
