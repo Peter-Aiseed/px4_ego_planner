@@ -79,7 +79,7 @@ void vins_callback(const nav_msgs::Odometry::ConstPtr& msg)
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "vins_transfer");
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("~");
 
     ros::Subscriber sub_vins = nh.subscribe("/vins_estimator/imu_propagate", 10, vins_callback);
     /*
