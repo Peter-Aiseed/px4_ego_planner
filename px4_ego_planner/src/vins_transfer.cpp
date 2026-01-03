@@ -13,18 +13,18 @@
 
 using namespace std;
 
-const Eigen::Matrix3d R_RDF_FLU = (Eigen::Matrix3d() <<
+static const Eigen::Matrix3d R_RDF_FLU = (Eigen::Matrix3d() <<
     0, 0, 1,
     -1, 0, 0,
     0, -1, 0).finished();
     
-Eigen::Matrix3d R_imu;
+static Eigen::Matrix3d R_imu;
 
-geometry_msgs::PoseStamped local_pose;
-nav_msgs::Path path;
+static geometry_msgs::PoseStamped local_pose;
+static nav_msgs::Path path;
 
-bool vins_received = false;
-bool imu_received = false;
+static bool vins_received = false;
+static bool imu_received = false;
 
 void imu_callback(const sensor_msgs::Imu::ConstPtr& msg)
 {

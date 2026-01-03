@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   nav_msgs
   mavros_msgs
+  visualization_msgs
 )
 
 find_package(Eigen3 REQUIRED)
@@ -34,14 +35,22 @@ add_executable(setgoal_node src/setgoal_node.cpp)
 target_link_libraries(setgoal_node ${catkin_LIBRARIES})
 add_dependencies(setgoal_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+## vins_transfer_node
 add_executable(vins_transfer src/vins_transfer.cpp)
 target_link_libraries(vins_transfer
   ${catkin_LIBRARIES}
 )
 add_dependencies(vins_transfer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+## visualization node
+add_executable(visualization_node src/visualization_robot.cpp)
+target_link_libraries(visualization_node
+  ${catkin_LIBRARIES}
+)
+add_dependencies(visualization_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 
 ## Optional but recommended: install targets
-install(TARGETS flight_mode_manager setgoal_node vins_transfer
+install(TARGETS flight_mode_manager setgoal_node vins_transfer visualization_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

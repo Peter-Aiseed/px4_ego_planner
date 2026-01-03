@@ -4,8 +4,8 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Planning1/optimal_traj1
         - /Mapping1/simulation_map1/Autocompute Value Bounds1
-        - /image1
         - /Odometry1/Shape1
       Splitter Ratio: 0.5
     Tree Height: 553
@@ -69,7 +69,7 @@ Visualization Manager:
           Marker Topic: /ego_planner_node/goal_point
           Name: goal_point
           Namespaces:
-            {}
+            "": true
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -85,48 +85,8 @@ Visualization Manager:
           Marker Topic: /ego_planner_node/optimal_list
           Name: optimal_traj
           Namespaces:
-            {}
+            "": true
           Queue Size: 100
-          Value: true
-        - Class: rviz/Marker
-          Enabled: false
-          Marker Topic: /ego_planner_node/a_star_list
-          Name: AStar
-          Namespaces:
-            {}
-          Queue Size: 100
-          Value: false
-        - Class: rviz/Marker
-          Enabled: false
-          Marker Topic: /ego_planner_node/init_list
-          Name: InitTraj
-          Namespaces:
-            {}
-          Queue Size: 100
-          Value: false
-        - Alpha: 1
-          Buffer Length: 1
-          Class: rviz/Path
-          Color: 25; 255; 0
-          Enabled: true
-          Head Diameter: 0.30000001192092896
-          Head Length: 0.20000000298023224
-          Length: 0.30000001192092896
-          Line Style: Lines
-          Line Width: 0.029999999329447746
-          Name: drone_path
-          Offset:
-            X: 0
-            Y: 0
-            Z: 0
-          Pose Color: 255; 85; 255
-          Pose Style: Axes
-          Queue Size: 10
-          Radius: 0.029999999329447746
-          Shaft Diameter: 0.10000000149011612
-          Shaft Length: 0.10000000149011612
-          Topic: /odom_visualization/path
-          Unreliable: false
           Value: true
       Enabled: true
       Name: Planning
@@ -188,48 +148,8 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
-        - Alpha: 1
-          Autocompute Intensity Bounds: true
-          Autocompute Value Bounds:
-            Max Value: 2.7592508792877197
-            Min Value: -0.9228500127792358
-            Value: false
-          Axis: Z
-          Channel Name: intensity
-          Class: rviz/PointCloud2
-          Color: 187; 187; 187
-          Color Transformer: AxisColor
-          Decay Time: 0
-          Enabled: false
-          Invert Rainbow: false
-          Max Color: 255; 255; 255
-          Min Color: 0; 0; 0
-          Name: real_map
-          Position Transformer: XYZ
-          Queue Size: 10
-          Selectable: true
-          Size (Pixels): 3
-          Size (m): 0.10000000149011612
-          Style: Boxes
-          Topic: /grid_map/occupancy
-          Unreliable: false
-          Use Fixed Frame: true
-          Use rainbow: true
-          Value: false
       Enabled: true
       Name: Mapping
-    - Class: rviz/Group
-      Displays:
-        - Class: rviz/Marker
-          Enabled: true
-          Marker Topic: /odom_visualization/robot
-          Name: robot
-          Namespaces:
-            {}
-          Queue Size: 100
-          Value: true
-      Enabled: true
-      Name: Simulation
     - Class: rviz/Image
       Enabled: true
       Image Topic: /quadrotor/camera/rgb/image_raw
@@ -266,16 +186,24 @@ Visualization Manager:
       Queue Size: 5
       Shape:
         Alpha: 1
-        Axes Length: 1
-        Axes Radius: 0.10000000149011612
+        Axes Length: 0.10000000149011612
+        Axes Radius: 0.029999999329447746
         Color: 255; 25; 0
         Head Length: 0.30000001192092896
         Head Radius: 0.20000000298023224
         Shaft Length: 1
         Shaft Radius: 0.20000000298023224
-        Value: Arrow
+        Value: Axes
       Topic: /mavros/local_position/odom
       Unreliable: false
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /visualization_node/robot
+      Name: drone
+      Namespaces:
+        mesh: true
+      Queue Size: 100
       Value: true
   Enabled: true
   Global Options:
@@ -304,7 +232,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 20.075563430786133
+      Distance: 19.636335372924805
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -312,17 +240,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -3.883380889892578
-        Y: 2.7269785404205322
-        Z: 1.9073486328125e-06
+        X: 0.5192309617996216
+        Y: 0.35782575607299805
+        Z: -1.144712314271601e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6897977590560913
+      Pitch: 0.8447967767715454
       Target Frame: world
-      Yaw: 2.615441083908081
+      Yaw: 2.9936280250549316
     Saved:
       - Class: rviz/ThirdPersonFollower
         Distance: 17.48538589477539
@@ -360,7 +288,7 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1216
-  X: 280
-  Y: 237
+  X: 396
+  Y: 253
   image:
     collapsed: false
