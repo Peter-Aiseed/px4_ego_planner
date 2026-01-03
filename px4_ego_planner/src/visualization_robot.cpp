@@ -87,16 +87,16 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "visualization");
   ros::NodeHandle n("~");
 
-  std::string odom_topic;
+  std::string pose_topic;
   bool use_odom = false;
 
-  n.param("pose_topic", odom_topic, string("/mavros/local_position/odom"));
+  n.param("pose_topic", pose_topic, string("/mavros/local_position/odom"));
   n.param("mesh_resource", mesh_resource, string("package://px4_ego_planner/resource/meshes/quadrotor.mesh"));
   n.param("use_odom", use_odom, false);
   
   if(use_odom)
   	ros::Subscriber sub_odom = n.subscribe(pose_topic, 10, odom_callback);
-  else:
+  else
 	ros::Subscriber sub_odom = n.subscribe(pose_topic, 10, pose_callback);
   
   robot_pub = n.advertise<visualization_msgs::Marker>("robot", 10, true);  
