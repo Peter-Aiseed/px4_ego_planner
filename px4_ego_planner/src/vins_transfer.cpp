@@ -1,5 +1,5 @@
 /*
-    The camera orientation is defined as the LUF frame.
+    The camera orientation is defined as the RDF  frame.
     what mavros expects is the position in ENU, and the orientation defined as FLU relative to ENU.
 */
 #include <iostream>
@@ -13,10 +13,10 @@
 
 using namespace std;
 
-const Eigen::Matrix3d R_LUF_FLU = (Eigen::Matrix3d() <<
+const Eigen::Matrix3d R_RDF_FLU = (Eigen::Matrix3d() <<
     0, 0, 1,
-    1, 0, 0,
-    0, 1, 0).finished();
+    -1, 0, 0,
+    0, -1, 0).finished();
     
 Eigen::Matrix3d R_imu;
 
@@ -57,7 +57,7 @@ void vins_callback(const nav_msgs::Odometry::ConstPtr& msg)
         );
 
         Eigen::Matrix3d R_vins = q_vins.toRotationMatrix();
-		Eigen::Vector3d P_tran = R_imu * R_LUF_FLU * R_vins.transpose() * P_vins;
+		Eigen::Vector3d P_tran = R_imu * R_RDF_FLU * R_vins.transpose() * P_vins;
         Eigen::Quaterniond q_tran(R_imu);
         q_tran.normalize();
 
