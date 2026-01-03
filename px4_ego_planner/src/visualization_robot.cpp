@@ -14,7 +14,7 @@ ros::Publisher robot_pub;
 void odom_callback(const nav_msgs::Odometry::ConstPtr& msg)
 {
     // Mesh model                                                  
-    robot.header.frame_id = "world";
+    robot.header.frame_id = "map";
     robot.header.stamp = msg->header.stamp; 
 
     robot.ns = "mesh";
@@ -49,7 +49,7 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr& msg)
 void pose_callback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     // Mesh model
-    robot.header.frame_id = "world";
+    robot.header.frame_id = "map";
     robot.header.stamp = msg->header.stamp;
 
     robot.ns = "mesh";
@@ -93,11 +93,12 @@ int main(int argc, char** argv)
   n.param("pose_topic", pose_topic, string("/mavros/local_position/odom"));
   n.param("mesh_resource", mesh_resource, string("package://px4_ego_planner/resource/meshes/quadrotor.mesh"));
   n.param("use_odom", use_odom, false);
-  
+
+  ros::Subscriber sub_pose;  
   if(use_odom)
-  	ros::Subscriber sub_odom = n.subscribe(pose_topic, 10, odom_callback);
+  	sub_pose = n.subscribe(pose_topic, 10, odom_callback);
   else
-	ros::Subscriber sub_odom = n.subscribe(pose_topic, 10, pose_callback);
+	sub_pose = n.subscribe(pose_topic, 10, pose_callback);
   
   robot_pub = n.advertise<visualization_msgs::Marker>("robot", 10, true);  
 
