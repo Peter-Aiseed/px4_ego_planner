@@ -25,10 +25,16 @@ include_directories(
   ${EIGEN3_INCLUDE_DIR}
 )
 
-## flight_mode_manager node
-add_executable(flight_mode_manager src/flight_mode_manager.cpp)
-target_link_libraries(flight_mode_manager ${catkin_LIBRARIES})
-add_dependencies(flight_mode_manager ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+## simulation flight mode manager node
+add_executable(sim_mode_manager src/sim_mode_manager.cpp)
+target_link_libraries(sim_mode_manager ${catkin_LIBRARIES})
+add_dependencies(sim_mode_manager ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+## real-world flight mode manager node
+add_executable(real_mode_manager src/real_mode_manager.cpp)
+target_link_libraries(real_mode_manager ${catkin_LIBRARIES})
+add_dependencies(real_mode_manager ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 
 ## setgoal_node node
 add_executable(setgoal_node src/setgoal_node.cpp)
@@ -51,6 +57,6 @@ add_dependencies(visualization_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin
 
 
 ## Optional but recommended: install targets
-install(TARGETS flight_mode_manager setgoal_node vins_transfer visualization_node
+install(TARGETS real_mode_manager sim_mode_manager setgoal_node vins_transfer visualization_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

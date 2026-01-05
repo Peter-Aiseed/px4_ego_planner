@@ -17,14 +17,14 @@ static const Eigen::Matrix3d R_RDF_FLU = (Eigen::Matrix3d() <<
     0, 0, 1,
     -1, 0, 0,
     0, -1, 0).finished();
-    
-static Eigen::Matrix3d R_imu;
+
+static Eigen::Vector3d P_vins;
+static Eigen::Matrix3d R_vins;
 
 static geometry_msgs::PoseStamped local_pose;
 static nav_msgs::Path path;
 
 static bool vins_received = false;
-static bool imu_received = false;
 
 void imu_callback(const sensor_msgs::Imu::ConstPtr& msg)
 {
@@ -36,43 +36,47 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr& msg)
     );
 
     R_imu = q_imu.toRotationMatrix();
-	
-    imu_received = true;
+
+    if(vins_received) {
+        // you have to consider the timestamp of the coordinates,
+        // as some coordinates are static while others change over time.
+        Eigen::Vector3d P_tran = R_imu * R_RDF_FLU * R_vins.transpose() * P_vins;
+        local_pose.pose.position.x = P_tran.x();
+        local_pose.pose.position.y = P_tran.y();
+        local_pose.pose.position.z = P_tran.z();
+        local_pose.pose.orientation.w = q_imu.w();
+        local_pose.pose.orientation.x = q_imu.x();
+        local_pose.pose.orientation.y = q_imu.y();
+        local_pose.pose.orientation.z = q_imu.z();
+        
+        // publish visual odometry to px4
+        local_pose.header.stamp = ros::Time::now();
+        pub_vio.publish(local_pose);
+        path.poses.push_back(local_pose);
+        pub_path.publish(path);
+
+        vins_received = false;
+    }
 }
 
 void vins_callback(const nav_msgs::Odometry::ConstPtr& msg)
 {
-    if(imu_received) {
-        Eigen::Vector3d P_vins(
-            msg->pose.pose.position.x,
+    P_vins << msg->pose.pose.position.x,
             msg->pose.pose.position.y,
-            msg->pose.pose.position.z
-        );
+            msg->pose.pose.position.z;
 
-        Eigen::Quaterniond q_vins(
-            msg->pose.pose.orientation.w,
-            msg->pose.pose.orientation.x,
-            msg->pose.pose.orientation.y,
-            msg->pose.pose.orientation.z
-        );
+    Eigen::Quaterniond q_vins(
+        msg->pose.pose.orientation.w,
+        msg->pose.pose.orientation.x,
+        msg->pose.pose.orientation.y,
+        msg->pose.pose.orientation.z
+    );
 
-        Eigen::Matrix3d R_vins = q_vins.toRotationMatrix();
-		Eigen::Vector3d P_tran = R_imu * R_RDF_FLU * R_vins.transpose() * P_vins;
-        Eigen::Quaterniond q_tran(R_imu);
-        q_tran.normalize();
+    R_vins = q_vins.toRotationMatrix();
 
-        // construct the pose that will be sent to PX4
-        local_pose.pose.position.x = P_tran.x();
-        local_pose.pose.position.y = P_tran.y();
-        local_pose.pose.position.z = P_tran.z();
-
-        local_pose.pose.orientation.w = q_tran.w();
-        local_pose.pose.orientation.x = q_tran.x();
-        local_pose.pose.orientation.y = q_tran.y();
-        local_pose.pose.orientation.z = q_tran.z();
-		
-		// ROS_INFO("camera position relative to ENU: x=%.2f, y=%.2f, z=%.2f", P_tran.x(), P_tran.y(), P_tran.z());
-		vins_received = true;
+    if(!vins_received) {
+        path.header.stamp = ros::Time::now();
+        vins_received = true;
     }
 }
 
@@ -81,35 +85,17 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "vins_transfer");
     ros::NodeHandle nh("~");
 
-    ros::Subscriber sub_vins = nh.subscribe("/vins_estimator/imu_propagate", 10, vins_callback);
+    local_pose.header.frame_id = "map";
+	path.header.frame_id = "map";
     /*
         imu/data: orientation in quaternion form computed by FCU (PX4).
         imu/data_raw: only raw imu data without quaternion.
     */
+    ros::Subscriber sub_vins = nh.subscribe("/vins_estimator/imu_propagate", 10, vins_callback);
     ros::Subscriber sub_imu = nh.subscribe("/mavros/imu/data", 10, imu_callback);
     ros::Publisher pub_vio = nh.advertise<geometry_msgs::PoseStamped>("/mavros/vision_pose/pose", 10);
 	ros::Publisher pub_path = nh.advertise<nav_msgs::Path>("path", 10);
 
-    ros::Rate rate(50);
-
-    local_pose.header.frame_id = "map";
-	path.header.stamp = ros::Time::now();
-	path.header.frame_id = "map";
-
-    while(ros::ok())
-    {
-        if(vins_received)
-        {
-            local_pose.header.stamp = ros::Time::now();
-            pub_vio.publish(local_pose);
-			path.poses.push_back(local_pose);
-			pub_path.publish(path);
-            vins_received = false;
-        }
-
-        ros::spinOnce();    // process callbacks in the queue once.
-        rate.sleep();
-    }
-
+    ros::spin();
     return 0;
 }

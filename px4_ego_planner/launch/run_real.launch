@@ -1,27 +1,31 @@
 <launch>
 
     <!-- launch mavros to communicate with PX4 -->
-    <include file="$(find mavros)/launch/px4.launch">
-        <arg name="fcu_url" value="udp://:14540@192.168.0.3:14557" />
-        <!--arg name="fcu_url" value="serial:///dev/ttyACM0:57600" /-->
-    </include>
+	<include file="$(find mavros)/launch/px4.launch">
+		<arg name="fcu_url" value="udp://:14540@192.168.0.3:14557"/>
+		<!--arg name="fcu_url" value="serial:///dev/ttyACM0:57600" /-->
+	</include>
 
 	<!-- open realsense camera -->
-	<include file="$(find px4_ego_planner)/resource/realsense_d455/rs_camera.launch" />
+	<include file="$(find px4_ego_planner)/resource/realsense_d455/rs_camera.launch"/>
 
 	<!-- start vins for localization -->
-	<node name="vins_estimator" pkg="vins" type="vins_node" args="$(find px4_ego_planner)/resource/realsense_d455/calibration.yaml" />
+	<node name="vins_estimator" pkg="vins" type="vins_node" args="$(find px4_ego_planner)/resource/realsense_d455/calibration.yaml"/>
     
 	<!-- build the tf tree between map and world, which is required by ego planner -->
 	<node pkg="tf" type="static_transform_publisher" name="map_to_world" args="0 0 0 0 0 0 world map 10"/>
 	
 	<!-- start transferring data to PX4 -->
-    <node name="vins_transfer" pkg="px4_ego_planner" type="vins_transfer" output="screen" />
+	<node name="vins_transfer" pkg="px4_ego_planner" type="vins_transfer" output="screen"/>
 
-    <!-- visualize robot in rviz -->
-    <node name="visualization_node" pkg="px4_ego_planner" type="visualization_node">
+	<!-- spawn robot's visualization model -->
+	<node name="visualization_node" pkg="px4_ego_planner" type="visualization_node">
 		<param name="pose_topic" value="/mavros/vision_pose/pose"/>
 	</node>
 
-	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find px4_ego_planner)/resource/real.rviz" required="true" />
+	<!-- start Rviz -->
+	<!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find px4_ego_planner)/resource/real.rviz" required="true"/> -->
+
+	<!-- start flight mode manager -->
+	<node name="real_mode_manager" pkg="px4_ego_planner" type="real_mode_manager" output="screen"/>
 </launch>	

@@ -40,7 +40,7 @@ roslaunch px4_ego_planner run_sim.launch
 2. Until you see "Ready to takeoff" in the first window, you can enter another command in the second window.
 This command is to start the flight mode manager node; the drone will then start takeoff. Just wait a few seconds for the drone to hovers in place.
 ```bash
-rosrun px4_ego_planner flight_mode_manager
+rosrun px4_ego_planner sim_mode_manager
 ```
 3. Launch ego_planner in the third window.
 ```bash
