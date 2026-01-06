@@ -19,12 +19,10 @@
 	<node name="vins_transfer" pkg="px4_ego_planner" type="vins_transfer" output="screen"/>
 
 	<!-- spawn robot's visualization model -->
-	<node name="visualization_node" pkg="px4_ego_planner" type="visualization_node">
-		<param name="pose_topic" value="/mavros/vision_pose/pose"/>
-	</node>
+	<node name="visualization_node" pkg="px4_ego_planner" type="visualization_node"/>
 
 	<!-- start Rviz -->
-	<!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find px4_ego_planner)/resource/real.rviz" required="true"/> -->
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find px4_ego_planner)/resource/real.rviz" required="true"/>
 
 	<!-- start flight mode manager -->
 	<node name="real_mode_manager" pkg="px4_ego_planner" type="real_mode_manager" output="screen"/>

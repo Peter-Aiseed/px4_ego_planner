@@ -38,9 +38,7 @@
 	<node pkg="tf" type="static_transform_publisher" name="map_to_world" args="0 0 0 0 0 0 world map 10"/>
 
 	<!-- visualize robot in rviz -->
-	<node name="visualization_node" pkg="px4_ego_planner" type="visualization_node">
-		<param name="use_odom" value="true" />
-	</node>
+	<node name="visualization_node" pkg="px4_ego_planner" type="visualization_node"/>
 
 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find px4_ego_planner)/resource/sim.rviz" required="true" />
 

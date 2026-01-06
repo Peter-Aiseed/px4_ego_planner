@@ -24,6 +24,9 @@ static Eigen::Matrix3d R_vins;
 static geometry_msgs::PoseStamped local_pose;
 static nav_msgs::Path path;
 
+static ros::Publisher pub_vio;
+static ros::Publisher pub_path;
+
 static bool vins_received = false;
 
 void imu_callback(const sensor_msgs::Imu::ConstPtr& msg)
@@ -35,7 +38,7 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr& msg)
         msg->orientation.z
     );
 
-    R_imu = q_imu.toRotationMatrix();
+    Eigen::Matrix3d R_imu = q_imu.toRotationMatrix();
 
     if(vins_received) {
         // you have to consider the timestamp of the coordinates,
@@ -91,10 +94,10 @@ int main(int argc, char** argv)
         imu/data: orientation in quaternion form computed by FCU (PX4).
         imu/data_raw: only raw imu data without quaternion.
     */
-    ros::Subscriber sub_vins = nh.subscribe("/vins_estimator/imu_propagate", 10, vins_callback);
-    ros::Subscriber sub_imu = nh.subscribe("/mavros/imu/data", 10, imu_callback);
-    ros::Publisher pub_vio = nh.advertise<geometry_msgs::PoseStamped>("/mavros/vision_pose/pose", 10);
-	ros::Publisher pub_path = nh.advertise<nav_msgs::Path>("path", 10);
+    ros::Subscriber sub_vins = nh.subscribe<nav_msgs::Odometry>("/vins_estimator/imu_propagate", 10, vins_callback);
+    ros::Subscriber sub_imu = nh.subscribe<sensor_msgs::Imu>("/mavros/imu/data", 10, imu_callback);
+    pub_vio = nh.advertise<geometry_msgs::PoseStamped>("/mavros/vision_pose/pose", 10);
+	pub_path = nh.advertise<nav_msgs::Path>("path", 10);
 
     ros::spin();
     return 0;
