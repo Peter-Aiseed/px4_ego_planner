@@ -55,7 +55,7 @@ int main(int argc, char** argv)
   n.param("odom_topic", odom_topic, string("/mavros/local_position/odom"));
   n.param("mesh_resource", mesh_resource, string("package://px4_ego_planner/resource/meshes/quadrotor.mesh"));
 
-  ros::Subscriber sub_odom = n.subscribe(odom_topic, 10, odom_callback);
+  ros::Subscriber sub_odom = n.subscribe<nav_msgs::Odometry>(odom_topic, 10, odom_callback);
   robot_pub = n.advertise<visualization_msgs::Marker>("robot", 10, true);  
 
   ros::spin();
