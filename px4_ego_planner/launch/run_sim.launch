@@ -1,7 +1,7 @@
 <launch>
 	<!-- parameters for simulator -->
 	<arg name="world_path" default="$(find px4_ego_planner)/resource/sim_world/simple_obstacle.world" />
-	<arg name="gui" default="false"/>
+	<arg name="gui" default="true"/>
 	<arg name="model" default="iris_depth_camera"/>
 	<arg name="fcu_url" default="udp://:14540@localhost:14557"/>
 	<arg name="gcs_url" default=""/>   <!-- GCS link is provided by SITL -->
