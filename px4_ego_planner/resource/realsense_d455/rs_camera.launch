@@ -19,7 +19,7 @@
 
   <arg name="confidence_width"    default="640"/>
   <arg name="confidence_height"   default="480"/>
-  <arg name="enable_confidence"   default="true"/>
+  <arg name="enable_confidence"   default="false"/>
   <arg name="confidence_fps"      default="30"/>
 
   <arg name="infra_width"         default="640"/>
@@ -38,7 +38,7 @@
   <arg name="infra_fps"           default="30"/>
   <arg name="color_fps"           default="30"/>
   <arg name="gyro_fps"            default="200"/>
-  <arg name="accel_fps"           default="250"/>
+  <arg name="accel_fps"           default="200"/>
   <arg name="enable_gyro"         default="true"/>
   <arg name="enable_accel"        default="true"/>
 

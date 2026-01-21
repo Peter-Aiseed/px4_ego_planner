@@ -5,18 +5,21 @@ project(px4_ego_planner)
 add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
+	rospy
   roscpp
   std_msgs
   geometry_msgs
   nav_msgs
   mavros_msgs
   visualization_msgs
+  tf2
+  tf2_geometry_msgs
 )
 
 find_package(Eigen3 REQUIRED)
 
 catkin_package(
-  CATKIN_DEPENDS roscpp std_msgs geometry_msgs nav_msgs mavros_msgs
+  CATKIN_DEPENDS rospy roscpp std_msgs geometry_msgs nav_msgs mavros_msgs
 )
 
 include_directories(
@@ -55,8 +58,14 @@ target_link_libraries(visualization_node
 )
 add_dependencies(visualization_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-
 ## Optional but recommended: install targets
 install(TARGETS real_mode_manager sim_mode_manager setgoal_node vins_transfer visualization_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+catkin_install_python(PROGRAMS
+  src/track.py
+  src/qwen.py
+  src/sot.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

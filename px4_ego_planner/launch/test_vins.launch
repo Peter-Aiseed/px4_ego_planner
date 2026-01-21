@@ -1,0 +1,9 @@
+<launch>
+  <!-- open realsense camera -->
+  <include file="$(find px4_ego_planner)/resource/realsense_d455/rs_camera.launch"/>
+
+  <!-- start vins for localization -->
+  <node name="vins_estimator" pkg="vins" type="vins_node" args="$(find px4_ego_planner)/resource/realsense_d455/calibration.yaml"/>
+
+	<include file="$(find vins)/launch/vins_rviz.launch"/>
+</launch>

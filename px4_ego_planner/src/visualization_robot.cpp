@@ -31,9 +31,9 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr& msg)
     robot.pose.orientation.y = msg->pose.pose.orientation.y;
     robot.pose.orientation.z = msg->pose.pose.orientation.z;
 
-    robot.scale.x = 2.0;
-    robot.scale.y = 2.0;
-    robot.scale.z = 2.0;
+    robot.scale.x = 1.0;
+    robot.scale.y = 1.0;
+    robot.scale.z = 1.0;
 
     // robot's color
     robot.color.a = 1.0;
