@@ -36,7 +36,7 @@ static void goal_callback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
   const auto& p = msg->pose.position;
 
-  ROS_INFO("Goal position x=%.3f y=%.3f z=%.3f", p.x, p.y, p.z);
+  ROS_INFO("Goal position x=%.1f y=%.1f z=%.1f", p.x, p.y, p.z);
 }
 
 // ---------------- Others functions ----------------
@@ -69,6 +69,9 @@ int main(int argc, char** argv)
   if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Info))
     ros::console::notifyLoggerLevelsChanged();
 
+	double desired_altitude;
+	nh.param("desired_altitude", desired_altitude, 0.3);
+
   // Register subscriber and publisher
   ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>("/mavros/state", 10, state_callback);
   ros::Subscriber vision_sub = nh.subscribe<geometry_msgs::PoseStamped>("/mavros/vision_pose/pose", 10, vision_callback);
@@ -85,7 +88,7 @@ int main(int argc, char** argv)
     const bool connected = g_state.connected;
     const bool v_ok = vision_check(0.5);
     const double altitude = g_vision_pose.pose.position.z;
-    const bool alt_ok = (altitude > 0.5);
+    const bool alt_ok = (altitude > desired_altitude);
     const bool traj_ok = traj_check(0.5);
     const bool offboard_ok = (g_state.mode == "OFFBOARD");
 
@@ -101,7 +104,7 @@ int main(int argc, char** argv)
         }
         else
         {
-          ROS_WARN_THROTTLE(2.0, "Altitude too low (z=%.2f <= 0.5m).", altitude);
+          ROS_WARN_THROTTLE(2.0, "Altitude too low (z=%.2f <= %.2fm).", altitude, desired_altitude);
         }
       }
       else
@@ -111,6 +114,7 @@ int main(int argc, char** argv)
       }
     }
     else if(offboard_ok && !traj_ok) {
+      ROS_INFO_THROTTLE(5.0, "OFFBOARD MODE NOW.");
       pub_sp.publish(g_vision_pose);
     }
 

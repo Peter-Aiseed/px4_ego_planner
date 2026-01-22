@@ -1,13 +1,16 @@
 <launch>
 
-    <!-- launch mavros to communicate with PX4 -->
+  <!-- launch mavros to communicate with PX4 -->
 	<include file="$(find mavros)/launch/px4.launch">
 		<arg name="fcu_url" value="udp://:14540@192.168.0.3:14557"/>
 		<!--arg name="fcu_url" value="serial:///dev/ttyACM0:57600" /-->
 	</include>
 
 	<!-- open realsense camera -->
-	<include file="$(find px4_ego_planner)/resource/realsense_d455/rs_camera.launch"/>
+	<include file="$(find px4_ego_planner)/resource/realsense_d455/rs_camera.launch">
+		<!-- arg name="align_depth" value="true"/ -->
+		<!-- arg name="filters" value="spatial,temporal,hole_filling"/ -->
+	</include>
 
 	<!-- start vins for localization -->
 	<node name="vins_estimator" pkg="vins" type="vins_node" args="$(find px4_ego_planner)/resource/realsense_d455/calibration.yaml"/>
@@ -22,8 +25,14 @@
 	<node name="visualization_node" pkg="px4_ego_planner" type="visualization_node"/>
 
 	<!-- start Rviz -->
-	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find px4_ego_planner)/resource/real.rviz" required="true"/>
+	<!--	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find px4_ego_planner)/resource/real.rviz" required="true"/> -->
 
 	<!-- start flight mode manager -->
-	<node name="real_mode_manager" pkg="px4_ego_planner" type="real_mode_manager" output="screen"/>
+	<node name="real_mode_manager" pkg="px4_ego_planner" type="real_mode_manager" output="screen">
+		<param name="desired_altitude" value="0.5"/>
+	</node>
+
+	<!-- increase the frequency of the topics related to odometry -->
+	<node pkg="mavros" type="mavsys" name="set_message_interval" output="screen" args="message_interval --id=32 --rate=50"/>
+
 </launch>	

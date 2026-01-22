@@ -32,7 +32,7 @@ echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 ```
 # Running in Gazebo
-Open a terminal and split it into four windows (Tmux or Terminator are recommended tools).
+Open a terminal and split it into three windows (Tmux or Terminator are recommended tools).
 1. In the first window, enter the following command to launch the PX4, MAVROS, Gazebo, and RViz. Note that the first launch may take a few minutes to load the Gazebo world.
 ```bash
 roslaunch px4_ego_planner run_sim.launch
@@ -46,7 +46,7 @@ rosrun px4_ego_planner sim_mode_manager
 ```bash
 roslaunch px4_ego_planner run_ego_sim.launch
 ```
-4. Send a goal point in the fourth window, I have already preset a feasible goal point in this node. Alternatively, you can use the **2D Nav Goal** tool in Rviz to specify a goal.
-```bash
-rosrun px4_ego_planner setgoal_node 
-``` 
+4. You can use the **2D Nav Goal** tool in Rviz to specify a goal.
+
+# Test in real-world
+coming soon!
