@@ -1,20 +1,20 @@
 <launch>
   <arg name="map_size_x" value="40.0"/>
   <arg name="map_size_y" value="40.0"/>
-  <arg name="map_size_z" value="1.0"/>
+  <arg name="map_size_z" value="3.0"/>
   <arg name="max_vel" value="0.2" />
   <arg name="max_acc" value="0.4" />
-  <arg name="planning_horizon" value="7.5" /> 
+  <arg name="planning_horizon" value="6.0" /> 
   <arg name="cx" value="322.411"/>
   <arg name="cy" value="242.840"/>
   <arg name="fx" value="390.407"/>
   <arg name="fy" value="390.407"/>
-  <arg name="obstacles_inflation" value = "0.5"/>
-  <arg name="depth_topic" value="/camera/depth/image_rect_raw"/>
-  <arg name="odom_topic" value="/mavros/local_position/odom" />
+  <!--arg name="obstacles_inflation" value = "0.299"/-->
+  <arg name="depth_topic" default="/camera/depth/image_rect_raw"/>
+  <arg name="odom_topic" default="/mavros/local_position/odom" />
 
   <!-- main algorithm params -->
-  <include file="$(find ego_planner)/launch/advanced_param.xml">
+  <include file="$(find px4_ego_planner)/launch/advanced_param.xml">
     <arg name="map_size_x_" value="$(arg map_size_x)"/>
     <arg name="map_size_y_" value="$(arg map_size_y)"/>
     <arg name="map_size_z_" value="$(arg map_size_z)"/>
@@ -27,7 +27,26 @@
     <arg name="max_vel" value="$(arg max_vel)" />
     <arg name="max_acc" value="$(arg max_acc)" />
     <arg name="planning_horizon" value="$(arg planning_horizon)" /> 
-    <arg name="obstacles_inflation" value = "$(arg obstacles_inflation)"/>
+    <!--arg name="obstacles_inflation" value = "$(arg obstacles_inflation)"/-->
+	<arg name="flight_type" value="1" />
+	<arg name="camera_pose_topic" value="nouse1"/>
+	<arg name="cloud_topic" value="nouse2"/>
+	<arg name="point_num" value="1" />
+	<arg name="point0_x" value="15" />
+	<arg name="point0_y" value="0" />
+	<arg name="point0_z" value="1" />
+	<arg name="point1_x" value="0.0" />
+	<arg name="point1_y" value="0.0" />
+	<arg name="point1_z" value="1.0" />
+	<arg name="point2_x" value="15.0" />
+	<arg name="point2_y" value="0.0" />
+	<arg name="point2_z" value="1.0" />
+	<arg name="point3_x" value="0.0" />
+	<arg name="point3_y" value="0.0" />
+	<arg name="point3_z" value="1.0" />
+	<arg name="point4_x" value="15.0" />
+	<arg name="point4_y" value="0.0" />
+	<arg name="point4_z" value="1.0" />
   </include>
 
   <!-- trajectory server -->

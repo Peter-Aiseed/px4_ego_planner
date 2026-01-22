@@ -1,14 +1,16 @@
 <launch>
-	<node name="real_mode_manager" pkg="px4_ego_planner" type="real_mode_manager" output="screen">
-		<param name="point_num" value="3"/>
-		<param name="point0_x" value="0.5"/>
-		<param name="point0_y" value="0.5"/>
-		<param name="point0_z" value="0.3"/>
-		<param name="point1_x" value="-0.5"/>
-		<param name="point1_y" value="-0.5"/>
-		<param name="point1_z" value="0.3"/>
-		<param name="point2_x" value="0.0"/>
-		<param name="point2_y" value="0.0"/>
-		<param name="point2_z" value="0.1"/>
-	</node>
+    <!-- open realsense camera -->
+    <include file="$(find px4_ego_planner)/resource/realsense_d455/rs_camera.launch"/>
+
+    <!-- start vins for localization -->
+    <node name="vins_estimator" pkg="vins" type="vins_node" args="$(find px4_ego_planner)/resource/realsense_d455/calibration.yaml"/>
+	
+	<!-- <include file="$(find vins)/launch/vins_rviz.launch"/> -->
+
+    <!-- build the tf tree between map and world, which is required by ego planner -->
+    <node pkg="tf" type="static_transform_publisher" name="map_to_world" args="0 0 0 0 0 0 world map 10"/>
+
+    <!-- start Rviz -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find px4_ego_planner)/resource/real.rviz" required="true"/>
+
 </launch>
