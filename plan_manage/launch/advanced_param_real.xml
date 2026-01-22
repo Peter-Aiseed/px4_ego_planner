@@ -74,7 +74,7 @@
     <param name="fsm/realworld_experiment" value="true"/>
     <param name="fsm/fail_safe" value="true"/>
 
-    <param name="grid_map/resolution"      value="0.1" /> 
+    <param name="grid_map/resolution"      value="0.15" /> 
     <param name="grid_map/map_size_x"   value="$(arg map_size_x_)" /> 
     <param name="grid_map/map_size_y"   value="$(arg map_size_y_)" /> 
     <param name="grid_map/map_size_z"   value="$(arg map_size_z_)" /> 
