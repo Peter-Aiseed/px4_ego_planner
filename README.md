@@ -1,5 +1,5 @@
 # Introduction
-This project forks from [ego_planner](https://github.com/ZJU-FAST-Lab/ego-planner.git), aiming to extend it to a PX4-compatiable version. Up to now, the implementation of ego-planner on Gazebo simulator has been completed! The real-world test will be conducted soon.
+This project forks from [ego_planner](https://github.com/ZJU-FAST-Lab/ego-planner.git), aiming to extend it to a PX4-compatible version. Up to now, the implementation of ego-planner in both the Gazebo simulator and the real world has been completed!
 # Environment
 A quick overview of the required configuration.
 - Ubuntu 20.04
