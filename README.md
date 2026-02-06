@@ -49,21 +49,16 @@ roslaunch px4_ego_planner run_ego_sim.launch
 4. You can use the **2D Nav Goal** tool in Rviz to specify a goal.
 
 # Real-World Testing
-It is pretty difficult to replicate our real-world experiment, since we possibly have different hardware setups and mounting location. However, I still would like to record how we implemented the real-world test for your reference.
-## Ego-motion estimation
-We mounted a realsense D455 camera on our drone, and ran VINS-Fusion (VINS) algorithm to implement real-time pose estimation. Since the D455 camera provides a relatively accurate IMU, we directly combined the built-in IMU and stereo camera to run VINS. Please refer to our camera configuration files located in "$(rospack find px4_ego_planner)/resource/realsense_d455/".
-Furthermore, we have written a coordinate transformation node to align the reference frames of VINS and PX4. "vins_transfer.cpp" is responsible for this function.
-## Start nodes step by step
+It is pretty difficult to replicate our real-world experiment, since we possibly have different hardware setups and mounting location. However, I would still like to record how we implemented the real-world test for your reference.
+## Pose estimation
+We mounted a realsense D455 camera on our drone, and ran VINS-Fusion (VINS) algorithm to implement real-time pose estimation. Since the D455 camera provides a relatively accurate IMU, we directly combined the built-in IMU and stereo camera to run VINS. Please refer to our camera configuration files located in "$(rospack find px4_ego_planner)/resource/realsense_d455/".<br>Furthermore, we have written a coordinate transformation node to align the reference frames of VINS and PX4. "vins_transfer.cpp" is responsible for this function.
+## Node launch steps
 Using a cable to connect your drone and laptop, and launch the following file:
 ```bash
 roslaunch px4_ego_planner run_real.launch
 ```
-After that, make sure everything is running well, you should see some prompts like "Altitude too low xx <= xx." in the terminal. This message indicate that before switching to OFFBOARD mode, the drone should first fly above a certian altitude, and then the mode can be switched from POSITION to OFFBOARD.
-In this launch file, the mavros, VINS and Rviz are all started automatically.
-Next, enter the following command in a new terminal.
+After that, make sure everything is running well, you should see some prompts like "Altitude too low xx <= xx." in the terminal. This message indicate that before switching to OFFBOARD mode, the drone should first fly above a certian altitude, and then the mode can be switched from POSITION to OFFBOARD.<br>In this launch file, the mavros, VINS and Rviz are all started automatically.<br>Next, enter the following command in a new terminal.
 ```bash
 roslaunch px4_ego_planner run_ego_real.launch
 ```
-You should see the ego_planner start working, and many colored grids are displayed in the Rviz to represent the obstacles. Then, you can use the mouse the set a goal by 2D Nav Goal tool in Rviz analogous to the simulated case.
-Finally, you can unplug the cable. Use the remote controller (RC) to take off the drone using POSITION mode until it reaches a certain altitude (typically around 0.5m), then switch to OFFBOARD mode. The drone will navigate to the goal and avoid the obstacles autonomously. 
-By the way, you should keep the throttle stick on RC at around 50 percent position, which allows you to take over control when the drone arrives the goal or encounters any emergency.
+You should see the ego_planner start working, and many colored grids are displayed in the Rviz to represent the obstacles. Then, you can use the mouse to set a goal using 2D Nav Goal tool in Rviz analogous to the simulated case.<br>Finally, you can unplug the cable. Use the remote controller (RC) to take off the drone using POSITION mode until it reaches a certain altitude (typically around 0.5 m), then switch to OFFBOARD mode. The drone will navigate to the goal and avoid obstacles autonomously.<br>By the way, you should keep the throttle stick on RC at around 50 percent position, which allows you to take over control when the drone arrives at the goal or encounters any emergency.
