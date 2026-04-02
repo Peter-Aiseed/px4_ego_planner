@@ -1,15 +1,26 @@
 # Introduction
-This project forks from [ego_planner](https://github.com/ZJU-FAST-Lab/ego-planner.git), aiming to extend it to a PX4-compatible version. Up to now, the implementation of ego-planner in both the Gazebo simulator and the real world has been completed!
+This project forks from [ego_planner](https://github.com/ZJU-FAST-Lab/ego-planner.git), aiming to extend it to a PX4-compatible version.
+Up to now, the implementation of ego-planner in both the Gazebo simulator and the real world has been completed!
 # Environment
 A quick overview of the required configuration.
 - Ubuntu 20.04
 - ROS Noetic
 - Gazebo classic 11
-- The latest version of PX4
+- PX4-Autopilot version v1.16.1
 - The latest versions of mavros, mavros_extras, mavros_msgs
 - Eigen3 library
 
-I actually installed these softwares following the guide of [PX4-Aovidance](https://github.com/PX4/PX4-Avoidance.git), so, I also strongly recommend you to refer to this project and double-check that all dependencies are installed correctly.
+You can installed these softwares following the guide of [PX4-Aovidance](https://github.com/PX4/PX4-Avoidance.git), the only different is that i am using PX4 v1.16.1 so make sure you install the right version of [PX4-Autopilot](https://github.com/PX4/PX4-Autopilot/tree/v1.16.1).  
+Also make sure .bashrc are sourcing and exporting the right place of PX4-Autopilot (Change to your PX4 Path and put it at last of .bashrc).
+```
+source ~/PX4-Autopilot-v1.16.1/PX4-Autopilot/Tools/simulation/gazebo-classic/setup_gazebo.bash ~/PX4-Autopilot-v1.16.1/PX4-Autopilot ~/PX4-Autopilot-v1.16.1/PX4-Autopilot/build/px4_sitl_default
+export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/PX4-Autopilot-v1.16.1/PX4-Autopilot
+export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/PX4-Autopilot-v1.16.1/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/ego_ws/src/px4_ego_planner/px4_ego_planner/models
+export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/PX4-Autopilot-v1.16.1/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds
+export GAZEBO_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/gazebo-11/plugins
+```
+
 # Build
 If you are new to ROS development, please create a workspace first.
 ```bash
@@ -19,7 +30,7 @@ mkdir -p ~/catkin_ws/src
 Then go to the source directory and clone this repository.
 ```bash
 cd ~/catkin_ws/src
-git clone https://github.com/hyq123-cmd/px4_ego_planner.git
+git clone https://github.com/Peter-Aiseed/px4_ego_planner.git
 ```
 Return to the parent directory and build the project.
 ```bash
