@@ -90,14 +90,14 @@ int main(int argc, char** argv)
   ros::NodeHandle pnh("~");
 
   // takeoff_height: relative climb height (meters)
-  double takeoff_height = 1.5;
+  double takeoff_height = 2.5;
   double altitude_tol = 0.10;
   double odom_timeout = 0.5;
   double raw_timeout = 0.3;
   double cmd_interval = 1.0;
   std::string hold_mode = "AUTO.LOITER"; // adjust if your PX4 exposes "HOLD"
 
-  pnh.param<double>("takeoff_height", takeoff_height, 1.5);
+  pnh.param<double>("takeoff_height", takeoff_height, 2.5);
   pnh.param<double>("altitude_tol", altitude_tol, 0.10);
   pnh.param<double>("odom_timeout", odom_timeout, 0.5);
   pnh.param<double>("raw_timeout", raw_timeout, 0.3);

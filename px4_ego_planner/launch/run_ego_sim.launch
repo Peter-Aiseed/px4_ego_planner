@@ -1,15 +1,17 @@
 <launch>
-	<arg name="map_size_x" value="100.0"/>
-	<arg name="map_size_y" value="100.0"/>
-	<arg name="map_size_z" value="3.0"/>
-	<arg name="max_vel" value="1.0" />
+	<arg name="map_size_x" value="200.0"/>
+	<arg name="map_size_y" value="200.0"/>
+	<arg name="map_size_z" value="10.0"/>
+	<arg name="max_vel" value="3.0" />
 	<arg name="max_acc" value="2.0" />
 	<arg name="planning_horizon" value="7.5" /> 
-  <arg name="cx" value="424.5"/>
-  <arg name="cy" value="240.5"/>
-  <arg name="fx" value="454.686"/>
-  <arg name="fy" value="454.686"/>
-	<arg name="depth_topic" default="/quadrotor/camera/depth/image_raw"/>
+	<arg name="cx" value="160.0"/>
+	<arg name="cy" value="120.0"/>
+	<arg name="fx" value="160.0"/>
+	<arg name="fy" value="160.0"/>
+	<arg name="cloud_topic" default="/cloud_concatenated"/>
+	<arg name="depth_topic" default="/dummy/image_raw"/>
+	<arg name="camera_pose" default="/dummy/pose"/>
 	<arg name="odom_topic" default="/mavros/local_position/odom" />
 
 	<!-- main algorithm params -->
@@ -19,8 +21,8 @@
 		<arg name="map_size_z_" value="$(arg map_size_z)"/>
 		<arg name="odometry_topic" value="$(arg odom_topic)"/>
 		<arg name="depth_topic" value="$(arg depth_topic)"/>
-		<arg name="camera_pose_topic" value="nouse"/>
-		<arg name="cloud_topic" value="nouse"/>
+		<arg name="camera_pose_topic" value="$(arg camera_pose)"/>
+		<arg name="cloud_topic" value="$(arg cloud_topic)"/>
 		<arg name="cx" value="$(arg cx)"/>
 		<arg name="cy" value="$(arg cy)"/>
 		<arg name="fx" value="$(arg fx)"/>
