@@ -11,7 +11,7 @@ A quick overview of the required configuration.
 - Eigen3 library
 
 You can installed these softwares following the guide of [PX4-Aovidance](https://github.com/PX4/PX4-Avoidance.git), the only different is that i am using PX4 v1.16.1 so make sure you install the right version of [PX4-Autopilot](https://github.com/PX4/PX4-Autopilot/tree/v1.16.1).  
-Also make sure .bashrc are sourcing and exporting the right place of PX4-Autopilot (Change to your PX4 Path and put it at last of .bashrc).
+Also make sure .bashrc are sourcing and exporting the right place of PX4-Autopilot (Change to your PX4 and repo path and put it at last of .bashrc).
 ```
 source ~/PX4-Autopilot-v1.16.1/PX4-Autopilot/Tools/simulation/gazebo-classic/setup_gazebo.bash ~/PX4-Autopilot-v1.16.1/PX4-Autopilot ~/PX4-Autopilot-v1.16.1/PX4-Autopilot/build/px4_sitl_default
 export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:~/PX4-Autopilot-v1.16.1/PX4-Autopilot
