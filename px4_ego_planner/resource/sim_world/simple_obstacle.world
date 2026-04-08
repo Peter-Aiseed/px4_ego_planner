@@ -99,7 +99,7 @@
     <include>
       <name>oak_tree_5</name>
       <uri>model://oak_tree</uri>
-      <pose>-1.2 -4.5 0  0 0 0</pose>
+      <pose>-1.2 -8 0  0 0 0</pose>
     </include>
     <include>
       <name>oak_tree_6</name>
@@ -114,7 +114,7 @@
     <include>
       <name>oak_tree_8</name>
       <uri>model://oak_tree</uri>
-      <pose>4 -3 0 0.15 0 0</pose>
+      <pose>4 -8 0 0.15 0 0</pose>
     </include>
     <include>
       <name>oak_tree_9</name>
@@ -129,7 +129,7 @@
     <include>
       <name>oak_tree_11</name>
       <uri>model://oak_tree</uri>
-      <pose>-1.2 7.8 0 0.15 0 0</pose>
+      <pose>-1.7 10.8 0 0.15 0 0</pose>
     </include>
 
   </world>

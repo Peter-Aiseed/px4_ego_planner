@@ -2,9 +2,9 @@
 	<arg name="map_size_x" value="50.0"/>
 	<arg name="map_size_y" value="50.0"/>
 	<arg name="map_size_z" value="10.0"/>
-	<arg name="max_vel" value="4.0" />
+	<arg name="max_vel" value="5.0" />
 	<arg name="max_acc" value="2.0" />
-	<arg name="planning_horizon" value="10" /> 
+	<arg name="planning_horizon" value="10" />
 	<arg name="cx" value="160.0"/>
 	<arg name="cy" value="120.0"/>
 	<arg name="fx" value="160.0"/>
@@ -29,7 +29,7 @@
 		<arg name="fy" value="$(arg fy)"/>
 		<arg name="max_vel" value="$(arg max_vel)" />
 		<arg name="max_acc" value="$(arg max_acc)" />
-		<arg name="planning_horizon" value="$(arg planning_horizon)" /> 
+		<arg name="planning_horizon" value="$(arg planning_horizon)" />
 		<arg name="flight_type" value="1" />
 		<arg name="point_num" value="1" />
 		<arg name="point0_x" value="15" />
@@ -57,10 +57,10 @@
 	</node>
 
 	<node pkg="waypoint_generator" name="waypoint_generator" type="waypoint_generator" output="screen">
-		<remap from="~odom" to="$(arg odom_topic)"/>        
+		<remap from="~odom" to="$(arg odom_topic)"/>
 		<remap from="~goal" to="/move_base_simple/goal"/>
 		<remap from="~traj_start_trigger" to="/traj_start_trigger" />
-		<param name="waypoint_type" value="manual-lonely-waypoint"/>    
+		<param name="waypoint_type" value="manual-lonely-waypoint"/>
 	</node>
 
 </launch>

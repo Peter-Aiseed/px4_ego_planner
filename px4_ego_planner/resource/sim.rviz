@@ -73,7 +73,7 @@ Visualization Manager:
           Marker Topic: /ego_planner_node/goal_point
           Name: goal_point
           Namespaces:
-            {}
+            "": true
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
@@ -89,7 +89,7 @@ Visualization Manager:
           Marker Topic: /ego_planner_node/optimal_list
           Name: optimal_traj
           Namespaces:
-            {}
+            "": true
           Queue Size: 100
           Value: true
       Enabled: true
@@ -389,6 +389,34 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/LaserScan
+      Color: 255; 0; 0
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
+      Name: LaserScan
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.15000000596046448
+      Style: Flat Squares
+      Topic: /obstacles_laserscan
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 255; 253; 224
@@ -416,7 +444,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 42.626182556152344
+      Distance: 53.47028350830078
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -424,17 +452,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.5192309617996216
-        Y: 0.35782575607299805
+        X: -7.8119611740112305
+        Y: -0.20191419124603271
         Z: -1.144712314271601e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.46479618549346924
+      Pitch: 0.7202032208442688
       Target Frame: world
-      Yaw: 3.1236352920532227
+      Yaw: 3.143634557723999
     Saved:
       - Class: rviz/ThirdPersonFollower
         Distance: 17.48538589477539
@@ -480,5 +508,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1216
-  X: 356
+  X: 299
   Y: 93
