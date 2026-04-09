@@ -2,9 +2,9 @@
 	<arg name="map_size_x" value="50.0"/>
 	<arg name="map_size_y" value="50.0"/>
 	<arg name="map_size_z" value="10.0"/>
-	<arg name="max_vel" value="5.0" />
+	<arg name="max_vel" value="3.0" />
 	<arg name="max_acc" value="2.0" />
-	<arg name="planning_horizon" value="10" />
+	<arg name="planning_horizon" value="7.5" />
 	<arg name="cx" value="160.0"/>
 	<arg name="cy" value="120.0"/>
 	<arg name="fx" value="160.0"/>
@@ -14,22 +14,38 @@
 	<arg name="camera_pose" default="/dummy/pose"/>
 	<arg name="odom_topic" default="/mavros/local_position/odom" />
 
+	<!-- number of the drone -->
+	<arg name="drone_id" value="0"/>
+
+	<!-- number of moving objects -->
+	<arg name="obj_num" value="0" />
+
 	<!-- main algorithm params -->
-	<include file="$(find ego_planner)/launch/advanced_param_real.xml">
+	<include file="$(find ego_planner)/launch/advanced_param.xml">
+
+		<arg name="drone_id" value="$(arg drone_id)"/>
+
 		<arg name="map_size_x_" value="$(arg map_size_x)"/>
 		<arg name="map_size_y_" value="$(arg map_size_y)"/>
 		<arg name="map_size_z_" value="$(arg map_size_z)"/>
+		<arg name="obj_num_set" value="$(arg obj_num)" />
+
 		<arg name="odometry_topic" value="$(arg odom_topic)"/>
 		<arg name="depth_topic" value="$(arg depth_topic)"/>
 		<arg name="camera_pose_topic" value="$(arg camera_pose)"/>
 		<arg name="cloud_topic" value="$(arg cloud_topic)"/>
+
 		<arg name="cx" value="$(arg cx)"/>
 		<arg name="cy" value="$(arg cy)"/>
 		<arg name="fx" value="$(arg fx)"/>
 		<arg name="fy" value="$(arg fy)"/>
+
 		<arg name="max_vel" value="$(arg max_vel)" />
 		<arg name="max_acc" value="$(arg max_acc)" />
 		<arg name="planning_horizon" value="$(arg planning_horizon)" />
+
+		<arg name="use_distinctive_trajs" value="true" />
+
 		<arg name="flight_type" value="1" />
 		<arg name="point_num" value="1" />
 		<arg name="point0_x" value="15" />
@@ -50,17 +66,9 @@
 	</include>
 
 	<!-- trajectory server -->
-	<node pkg="ego_planner" name="traj_server" type="traj_server" output="screen">
-		<remap from="/position_cmd" to="planning/pos_cmd"/>
-		<remap from="/odom_world" to="$(arg odom_topic)"/>
+	<node pkg="ego_planner" name="drone_$(arg drone_id)_traj_server" type="traj_server" output="screen">
+		<remap from="position_cmd" to="drone_$(arg drone_id)_planning/pos_cmd"/>
+		<remap from="~planning/bspline" to="drone_$(arg drone_id)_planning/bspline"/>
 		<param name="traj_server/time_forward" value="1.0" type="double"/>
 	</node>
-
-	<node pkg="waypoint_generator" name="waypoint_generator" type="waypoint_generator" output="screen">
-		<remap from="~odom" to="$(arg odom_topic)"/>
-		<remap from="~goal" to="/move_base_simple/goal"/>
-		<remap from="~traj_start_trigger" to="/traj_start_trigger" />
-		<param name="waypoint_type" value="manual-lonely-waypoint"/>
-	</node>
-
 </launch>

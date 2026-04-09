@@ -1,13 +1,13 @@
 #include "bspline_opt/uniform_bspline.h"
 #include "nav_msgs/Odometry.h"
-#include "ego_planner/Bspline.h"
+#include "traj_utils/Bspline.h"
 #include "std_msgs/Empty.h"
 #include "visualization_msgs/Marker.h"
 #include <ros/ros.h>
 #include <mavros_msgs/PositionTarget.h>
 
-mavros_msgs::PositionTarget px4_cmd;
 ros::Publisher px4_pos_cmd_pub;
+mavros_msgs::PositionTarget px4_cmd;
 
 double pos_gain[3] = {0, 0, 0};
 double vel_gain[3] = {0, 0, 0};
@@ -24,7 +24,7 @@ int traj_id_;
 double last_yaw_, last_yaw_dot_;
 double time_forward_;
 
-void bsplineCallback(ego_planner::BsplineConstPtr msg)
+void bsplineCallback(traj_utils::BsplineConstPtr msg)
 {
   // parse pos traj
 
@@ -230,14 +230,14 @@ void cmdCallback(const ros::TimerEvent &e)
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "traj_server");
-  ros::NodeHandle node;
+  // ros::NodeHandle node;
   ros::NodeHandle nh("~");
 
-  ros::Subscriber bspline_sub = node.subscribe("planning/bspline", 10, bsplineCallback);
+  ros::Subscriber bspline_sub = nh.subscribe("planning/bspline", 10, bsplineCallback);
 
-  px4_pos_cmd_pub = node.advertise<mavros_msgs::PositionTarget>("/mavros/setpoint_raw/local", 20);
+  px4_pos_cmd_pub = nh.advertise<mavros_msgs::PositionTarget>("/mavros/setpoint_raw/local", 20);
 
-  ros::Timer cmd_timer = node.createTimer(ros::Duration(0.01), cmdCallback);
+  ros::Timer cmd_timer = nh.createTimer(ros::Duration(0.01), cmdCallback);
 
   nh.param("traj_server/time_forward", time_forward_, -1.0);
   last_yaw_ = 0.0;

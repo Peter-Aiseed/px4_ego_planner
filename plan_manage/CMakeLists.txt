@@ -13,34 +13,20 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   geometry_msgs
+  mavros_msgs
   plan_env
   path_searching
   bspline_opt
   traj_utils
   message_generation
   cv_bridge
-  mavros_msgs
-)
-
-# Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  Bspline.msg
-  DataDisp.msg
-  )
-  
-# Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-  geometry_msgs
 )
 
 # catkin_package(CATKIN_DEPENDS message_runtime)
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES ego_planner
- CATKIN_DEPENDS plan_env path_searching bspline_opt traj_utils message_runtime
+ CATKIN_DEPENDS plan_env path_searching bspline_opt traj_utils 
 #  DEPENDS system_lib
 )
 
@@ -61,10 +47,10 @@ add_executable(ego_planner_node
 target_link_libraries(ego_planner_node 
   ${catkin_LIBRARIES}
   )
-add_dependencies(ego_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
+#add_dependencies(ego_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_executable(traj_server src/traj_server.cpp)
 target_link_libraries(traj_server ${catkin_LIBRARIES})
-add_dependencies(traj_server ${${PROJECT_NAME}_EXPORTED_TARGETS})
+#add_dependencies(traj_server ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 
