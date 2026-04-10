@@ -2,9 +2,9 @@
 	<arg name="map_size_x" value="50.0"/>
 	<arg name="map_size_y" value="50.0"/>
 	<arg name="map_size_z" value="10.0"/>
-	<arg name="max_vel" value="3.0" />
-	<arg name="max_acc" value="2.0" />
-	<arg name="planning_horizon" value="7.5" />
+	<arg name="max_vel" value="5.0" />
+	<arg name="max_acc" value="2.5" />
+	<arg name="planning_horizon" value="15.0" />
 	<arg name="cx" value="160.0"/>
 	<arg name="cy" value="120.0"/>
 	<arg name="fx" value="160.0"/>
@@ -21,7 +21,7 @@
 	<arg name="obj_num" value="0" />
 
 	<!-- main algorithm params -->
-	<include file="$(find ego_planner)/launch/advanced_param.xml">
+	<include file="$(find ego_planner)/launch/advanced_param_real.xml">
 
 		<arg name="drone_id" value="$(arg drone_id)"/>
 
