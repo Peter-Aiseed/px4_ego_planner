@@ -1,15 +1,15 @@
 <launch>
   <!-- Arguments -->
-  <arg name="target_frame" default="odom" />
-  <arg name="cloud_in1" default="/camera_front/depth/points" />
-  <arg name="cloud_in2" default="/camera_left/depth/points" />
-  <arg name="cloud_in3" default="/camera_right/depth/points" />
-  <arg name="cloud_in4" default="/camera_back/depth/points" />
-  <arg name="cloud_out" default="cloud_concatenated" />
+  <arg name="target_frame"/>
+  <arg name="cloud_in1" />
+  <arg name="cloud_in2"/>
+  <arg name="cloud_in3"/>
+  <arg name="cloud_in4" />
+  <arg name="cloud_out"/>
 
   <!-- Launch PointCloud2 concatenator node -->
   <node pkg="pointcloud_concatenate" type="pointcloud_concatenate_node" name="pointcloud_concat" output="log">
-    <param name="target_frame" value="$(arg target_frame)" />    
+    <param name="target_frame" value="$(arg target_frame)" />
     <param name="clouds" value="4" />
     <param name="hz" value="10" />
     <remap from="cloud_in1" to="$(arg cloud_in1)" />

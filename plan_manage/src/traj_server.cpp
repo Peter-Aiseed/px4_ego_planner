@@ -206,6 +206,7 @@ void cmdCallback(const ros::TimerEvent &e)
 
   px4_cmd.header.stamp = time_now;
   px4_cmd.coordinate_frame = 1;
+  px4_cmd.type_mask = 0;
 
   px4_cmd.position.x = pos(0);
   px4_cmd.position.y = pos(1);
@@ -237,7 +238,7 @@ int main(int argc, char **argv)
 
   px4_pos_cmd_pub = nh.advertise<mavros_msgs::PositionTarget>("/mavros/setpoint_raw/local", 20);
 
-  ros::Timer cmd_timer = nh.createTimer(ros::Duration(0.01), cmdCallback);
+  ros::Timer cmd_timer = nh.createTimer(ros::Duration(0.05), cmdCallback);
 
   nh.param("traj_server/time_forward", time_forward_, -1.0);
   last_yaw_ = 0.0;

@@ -98,8 +98,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 1.6150000095367432
-            Min Value: 0.11500000208616257
+            Max Value: 4.489999771118164
+            Min Value: 0.8899999856948853
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -443,7 +443,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 41.407386779785156
+      Distance: 58.174400329589844
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -451,17 +451,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -7.8119611740112305
-        Y: -0.20191419124603271
-        Z: -1.144712314271601e-06
+        X: -11.119441032409668
+        Y: -0.23766613006591797
+        Z: 6.48468267172575e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8202031254768372
+      Pitch: 0.6602033376693726
       Target Frame: world
-      Yaw: 3.138634443283081
+      Yaw: 3.138634204864502
     Saved:
       - Class: rviz/ThirdPersonFollower
         Distance: 17.48538589477539
@@ -507,5 +507,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1216
-  X: 327
+  X: 498
   Y: 93

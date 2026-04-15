@@ -3,9 +3,8 @@
 	<arg name="world_path" default="$(find px4_ego_planner)/resource/sim_world/simple_obstacle.world" />
 	<arg name="gui" default="false"/>
 	<arg name="model" default="iris_360_depth_camera"/>
-	<arg name="fcu_url" default="udp://:14540@localhost:14557"/>
 
-	<!-- GCS link is provided by SITL -->
+	<arg name="fcu_url" default="udp://:14540@localhost:14557"/>
 	<arg name="gcs_url" default=""/>
 	<arg name="tgt_system" default="1"/>
 	<arg name="tgt_component" default="1" />
@@ -52,7 +51,14 @@
 	<node pkg="tf" type="static_transform_publisher" name="back_opt" args="0 0 0 -1.5708 0 -1.5708 back_camera_link back_camera_optical_frame 100" />
 
 	<!-- Concat the Pointcloud -->
-	<include file="$(find pointcloud_concatenate)/launch/concat.launch"/>
+	<include file="$(find pointcloud_concatenate)/launch/concat.launch">
+		<arg name="target_frame" default="odom" />
+		<arg name="cloud_in1" default="/camera_front/depth/points" />
+		<arg name="cloud_in2" default="/camera_left/depth/points" />
+		<arg name="cloud_in3" default="/camera_right/depth/points" />
+		<arg name="cloud_in4" default="/camera_back/depth/points" />
+		<arg name="cloud_out" default="cloud_concatenated" />
+	</include>
 
 	<!-- Pointcloud to Laserscan -->
 	<node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="cloud_to_scan">

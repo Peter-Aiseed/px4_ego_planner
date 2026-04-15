@@ -13,7 +13,7 @@
       <background>0.7 0.7 0.7 1</background>
       <shadows>1</shadows>
     </scene>
- <physics name='default_physics' default='0' type='ode'>
+    <physics name='default_physics' default='0' type='ode'>
       <gravity>0 0 -9.8066</gravity>
       <ode>
         <solver>
@@ -58,78 +58,83 @@
     <include>
       <name>pine_tree_1</name>
       <uri>model://pine_tree</uri>
-      <pose>4 7 0   0 0 0</pose>
+      <pose>4 7 0 0 0 0</pose>
     </include>
     <include>
       <name>pine_tree_2</name>
       <uri>model://pine_tree</uri>
-      <pose>6.1 7.6 0   0 0 0</pose>
+      <pose>6.8 8.6 0 0 0 0</pose>
     </include>
     <include>
       <name>pine_tree_3</name>
       <uri>model://pine_tree</uri>
-      <pose>19.3 -14 0   0 0 0</pose>
+      <pose>19.3 -14 0 0 0 0</pose>
     </include>
     <include>
       <name>pine_tree_4</name>
       <uri>model://pine_tree</uri>
-      <pose>16 -11.5 0  0 0 0</pose>
+      <pose>16 -11.5 0 0 0 0</pose>
     </include>
 
     <include>
       <name>oak_tree_1</name>
       <uri>model://oak_tree</uri>
-      <pose>10 0 0  0 0 0</pose>
+      <pose>10 2.3 0.5 0 0 0</pose>
     </include>
     <include>
       <name>oak_tree_2</name>
       <uri>model://oak_tree</uri>
-      <pose>10.25 -4.25 0  0 0 0</pose>
+      <pose>13.25 -2.25 0.5 0 0 0</pose>
     </include>
     <include>
       <name>oak_tree_3</name>
       <uri>model://oak_tree</uri>
-      <pose>0.2 -14.4 0  0 0 0</pose>
+      <pose>12.2 13.4 0.5 0 0 0</pose>
     </include>
     <include>
       <name>oak_tree_4</name>
       <uri>model://oak_tree</uri>
-      <pose>1.7 -18.5 0  0 0 0</pose>
+      <pose>1.7 -18.5 0.5 0 0 0</pose>
     </include>
     <include>
       <name>oak_tree_5</name>
       <uri>model://oak_tree</uri>
-      <pose>-1.2 -8 0  0 0 0</pose>
+      <pose>-1.2 -12.5 0.5 0 0 0</pose>
     </include>
     <include>
       <name>oak_tree_6</name>
       <uri>model://oak_tree</uri>
-      <pose>-8 -9.8 0  0 0 0</pose>
+      <pose>-8 -9.8 0.5 0 0 0</pose>
     </include>
     <include>
       <name>oak_tree_7</name>
       <uri>model://oak_tree</uri>
-      <pose>-10.6 -5.6 0 0 0 0</pose>
+      <pose>-10.6 -5.6 0.5 0 0 0</pose>
     </include>
     <include>
       <name>oak_tree_8</name>
       <uri>model://oak_tree</uri>
-      <pose>4 -8 0 0.15 0 0</pose>
+      <pose>4 -8 0.5 0.15 0 0</pose>
     </include>
     <include>
       <name>oak_tree_9</name>
       <uri>model://oak_tree</uri>
-      <pose>-6.5 0.8 0  0 0 0</pose>
+      <pose>-7.7 0.8 0.5 0 0 0</pose>
     </include>
     <include>
       <name>oak_tree_10</name>
       <uri>model://oak_tree</uri>
-      <pose>-8.6 7.6 0 0 0 0</pose>
+      <pose>-8.6 7.6 0.5 0 0 0</pose>
     </include>
     <include>
       <name>oak_tree_11</name>
       <uri>model://oak_tree</uri>
-      <pose>-1.7 10.8 0 0.15 0 0</pose>
+      <pose>-1.7 13.8 0.5 0 0 0</pose>
+    </include>
+    <include>
+      <name>oak_tree_12</name>
+      <uri>model://oak_tree</uri>
+      <pose>-14.5 -1.8 0.5 0 0 0</pose>
     </include>
 
   </world>
