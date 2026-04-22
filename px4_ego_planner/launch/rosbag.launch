@@ -1,0 +1,27 @@
+<launch>
+  <arg name="bag_path" default="/home/peter/rosbag_dataset/rosbag/20260416/" />
+  
+  <node pkg="rosbag" type="record" name="drone_recorder" output="screen"
+    args="record -o $(arg bag_path)
+            /camera1/camera_info
+            /camera1/image_raw/compressed
+            /camera2/camera_info
+            /camera2/image_raw/compressed
+            /camera3/camera_info
+            /camera3/image_raw/compressed
+            /diagnostics
+            /mavros/global_position/compass_hdg
+            /mavros/global_position/global
+            /mavros/global_position/raw/fix
+            /mavros/global_position/raw/gps_vel
+            /mavros/local_position/accel
+            /mavros/local_position/odom
+            /mavros/local_position/pose
+            /mavros/local_position/velocity_body
+            /mavros/local_position/velocity_local
+            /mavros/imu/data
+            /mavros/imu/mag
+            /mavros/time_reference
+            /tf
+            /tf_static" />
+</launch>

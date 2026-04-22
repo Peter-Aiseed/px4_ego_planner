@@ -8,6 +8,8 @@
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/PositionTarget.h>
 
+#include <cmath>
+
 static mavros_msgs::State g_state;
 
 // local odom gate
@@ -18,6 +20,7 @@ static nav_msgs::Odometry g_odom;
 // raw setpoint gate
 static bool g_raw_received = false;
 static ros::Time g_last_raw_time(0);
+static double g_raw_velocity = 0.0;
 
 static void state_cb(const mavros_msgs::State::ConstPtr& msg)
 {
@@ -31,10 +34,11 @@ static void odom_cb(const nav_msgs::Odometry::ConstPtr& msg)
   g_odom_received = true;
 }
 
-static void raw_sp_cb(const mavros_msgs::PositionTarget::ConstPtr& /*msg*/)
+static void raw_sp_cb(const mavros_msgs::PositionTarget::ConstPtr& msg)
 {
   g_last_raw_time = ros::Time::now();
   g_raw_received = true;
+  g_raw_velocity = std::sqrt(std::pow(msg->velocity.x, 2) + std::pow(msg->velocity.y, 2) + std::pow(msg->velocity.z, 2));
 }
 
 static bool isOdomValid(double timeout_s)
@@ -96,6 +100,7 @@ int main(int argc, char** argv)
   double raw_timeout = 0.3;
   double cmd_interval = 1.0;
   std::string hold_mode = "AUTO.LOITER"; // adjust if your PX4 exposes "HOLD"
+  std::string position_mode = "POSCTL";
 
   pnh.param<double>("takeoff_height", takeoff_height, 2.5);
   pnh.param<double>("altitude_tol", altitude_tol, 0.10);
@@ -103,6 +108,7 @@ int main(int argc, char** argv)
   pnh.param<double>("raw_timeout", raw_timeout, 0.3);
   pnh.param<double>("cmd_interval", cmd_interval, 1.0);
   pnh.param<std::string>("hold_mode", hold_mode, std::string("AUTO.LOITER"));
+  pnh.param<std::string>("position_mode", position_mode, std::string("POSCTL"));
 
   ros::Subscriber state_sub = nh.subscribe("/mavros/state", 10, state_cb);
   ros::Subscriber odom_sub  = nh.subscribe("/mavros/local_position/odom", 10, odom_cb);
@@ -128,6 +134,7 @@ int main(int argc, char** argv)
 
   // takeoff target (relative)
   bool takeoff_target_inited = false;
+  bool positionModeTakeover = false;
   double takeoff_start_z = 0.0;
   double takeoff_target_z = 0.0;
 
@@ -141,10 +148,20 @@ int main(int argc, char** argv)
     // HOLD 阶段：根据 /mavros/setpoint_raw/local 有无数据在 HOLD <-> OFFBOARD 之间切换
     if (stage == Stage::HOLD)
     {
-      if (raw_ok && g_state.mode != "OFFBOARD" &&
+      if (!positionModeTakeover && g_state.mode == position_mode)
+      {
+        positionModeTakeover = true;
+        ROS_INFO("Mode Changed by User: POSITION");
+      }
+      else if (positionModeTakeover && g_state.mode == "OFFBOARD")
+      {
+        positionModeTakeover = false;
+      }
+      if (raw_ok && g_raw_velocity >= 0.1 && g_state.mode != "OFFBOARD" &&
           (ros::Time::now() - last_cmd_time) > ros::Duration(0.2))
       {
         setMode(set_mode_client, "OFFBOARD");
+        positionModeTakeover = false;
         last_cmd_time = ros::Time::now();
       }
       else if (!raw_ok && g_state.mode == "OFFBOARD" &&

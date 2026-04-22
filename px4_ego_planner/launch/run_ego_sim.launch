@@ -2,9 +2,9 @@
 	<arg name="map_size_x" value="50.0"/>
 	<arg name="map_size_y" value="50.0"/>
 	<arg name="map_size_z" value="10.0"/>
-	<arg name="max_vel" value="8.0" />
+	<arg name="max_vel" value="6.0" />
 	<arg name="max_acc" value="3.0" />
-	<arg name="planning_horizon" value="15.0" />
+	<arg name="planning_horizon" value="12.0" />
 	<arg name="cx" value="160.0"/>
 	<arg name="cy" value="120.0"/>
 	<arg name="fx" value="160.0"/>
