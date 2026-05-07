@@ -52,10 +52,10 @@
 
 	<!-- Concat the Pointcloud -->
 	<node pkg="px4_ego_planner" type="stable_tf_pub.py" name="stable_tf_pub" output="screen" />
-	
+
 	<include file="$(find pointcloud_concatenate)/launch/concat.launch">
 		<arg name="hz" default="5" />
-		<arg name="target_frame" default="base_link_stable" />
+		<arg name="target_frame" default="odom" />
 		<arg name="cloud_in1" default="/camera_front/depth/points" />
 		<arg name="cloud_in2" default="/camera_left/depth/points" />
 		<arg name="cloud_in3" default="/camera_right/depth/points" />
