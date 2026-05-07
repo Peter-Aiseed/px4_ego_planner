@@ -1,5 +1,6 @@
 <launch>
   <!-- Arguments -->
+  <arg name="hz"/>
   <arg name="target_frame"/>
   <arg name="cloud_in1" />
   <arg name="cloud_in2"/>
@@ -11,7 +12,7 @@
   <node pkg="pointcloud_concatenate" type="pointcloud_concatenate_node" name="pointcloud_concat" output="log">
     <param name="target_frame" value="$(arg target_frame)" />
     <param name="clouds" value="4" />
-    <param name="hz" value="10" />
+    <param name="hz" value="$(arg hz)" />
     <remap from="cloud_in1" to="$(arg cloud_in1)" />
     <remap from="cloud_in2" to="$(arg cloud_in2)" />
     <remap from="cloud_in3" to="$(arg cloud_in3)" />

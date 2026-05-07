@@ -51,8 +51,11 @@
 	<node pkg="tf" type="static_transform_publisher" name="back_opt" args="0 0 0 -1.5708 0 -1.5708 back_camera_link back_camera_optical_frame 100" />
 
 	<!-- Concat the Pointcloud -->
+	<node pkg="px4_ego_planner" type="stable_tf_pub.py" name="stable_tf_pub" output="screen" />
+	
 	<include file="$(find pointcloud_concatenate)/launch/concat.launch">
-		<arg name="target_frame" default="odom" />
+		<arg name="hz" default="5" />
+		<arg name="target_frame" default="base_link_stable" />
 		<arg name="cloud_in1" default="/camera_front/depth/points" />
 		<arg name="cloud_in2" default="/camera_left/depth/points" />
 		<arg name="cloud_in3" default="/camera_right/depth/points" />
@@ -64,7 +67,7 @@
 	<node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="cloud_to_scan">
 		<remap from="cloud_in" to="/cloud_concatenated"/>
 		<remap from="scan" to="/obstacles_laserscan"/>
-		<param name="target_frame" value="base_link_frd"/>
+		<param name="target_frame" value="base_link_stable"/>
 		<param name="min_height" value="-0.5"/>
 		<param name="max_height" value="0.5"/>
 		<param name="angle_min" value="-3.14159265359"/>
