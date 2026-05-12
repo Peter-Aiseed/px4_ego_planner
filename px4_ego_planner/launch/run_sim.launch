@@ -1,6 +1,7 @@
 <launch>
 	<!-- parameters for simulator -->
 	<arg name="world_path" default="$(find px4_ego_planner)/resource/sim_world/simple_obstacle.world" />
+	<!-- <arg name="world_path" default="/home/peter/PX4-Autopilot-v1.16.1/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/baylands.world" /> -->
 	<arg name="gui" default="false"/>
 	<arg name="model" default="iris_360_depth_camera"/>
 
@@ -52,22 +53,33 @@
 
 	<!-- Concat the Pointcloud -->
 	<node pkg="px4_ego_planner" type="stable_tf_pub.py" name="stable_tf_pub" output="screen" />
+	<node pkg="px4_ego_planner" type="virtual_ground.py" name="virtual_ground" output="screen" />
 
-	<include file="$(find pointcloud_concatenate)/launch/concat.launch">
-		<arg name="hz" default="5" />
-		<arg name="target_frame" default="odom" />
-		<arg name="cloud_in1" default="/camera_front/depth/points" />
-		<arg name="cloud_in2" default="/camera_left/depth/points" />
-		<arg name="cloud_in3" default="/camera_right/depth/points" />
-		<arg name="cloud_in4" default="/camera_back/depth/points" />
-		<arg name="cloud_out" default="cloud_concatenated" />
-	</include>
+	<node pkg="pointcloud_concatenate" type="pointcloud_concatenate_node" name="pointcloud_concat_1" output="log">
+		<param name="target_frame" value="odom" />
+		<param name="clouds" value="4" />
+		<param name="hz" value="5" />
+		<remap from="cloud_in1" to="/camera_front/depth/points" />
+		<remap from="cloud_in2" to="/camera_left/depth/points" />
+		<remap from="cloud_in3" to="/camera_right/depth/points" />
+		<remap from="cloud_in4" to="/camera_back/depth/points" />
+		<remap from="cloud_out" to="/pointcloud/allaround" />
+	</node>
+
+	<node pkg="pointcloud_concatenate" type="pointcloud_concatenate_node" name="pointcloud_concat_2" output="log">
+		<param name="target_frame" value="odom" />
+		<param name="clouds" value="2" />
+		<param name="hz" value="5" />
+		<remap from="cloud_in1" to="/pointcloud/ground" />
+		<remap from="cloud_in2" to="/pointcloud/allaround" />
+		<remap from="cloud_out" to="/pointcloud/concatenated" />
+	</node>
 
 	<!-- Pointcloud to Laserscan -->
 	<node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="cloud_to_scan">
-		<remap from="cloud_in" to="/cloud_concatenated"/>
+		<remap from="cloud_in" to="/pointcloud/concatenated"/>
 		<remap from="scan" to="/obstacles_laserscan"/>
-		<param name="target_frame" value="base_link_stable"/>
+		<param name="target_frame" value="base_link_stable_frd"/>
 		<param name="min_height" value="-0.5"/>
 		<param name="max_height" value="0.5"/>
 		<param name="angle_min" value="-3.14159265359"/>
@@ -75,7 +87,7 @@
 		<param name="angle_increment" value="0.01745329"/>
 		<param name="range_min" value="0.5"/>
 		<param name="range_max" value="15.0"/>
-		<param name="use_inf" value="true"/>
+		<param name="use_inf" value="false"/>
 	</node>
 
 	<node pkg="px4_ego_planner" type="scan_to_mavros.py" name="laser_to_mavros" output="screen"/>

@@ -168,6 +168,15 @@ Visualization Manager:
         mesh: true
       Queue Size: 100
       Value: true
+    - Alpha: 1
+      Class: rviz/Axes
+      Enabled: true
+      Length: 1
+      Name: Drone Axes
+      Radius: 0.10000000149011612
+      Reference Frame: base_link_stable
+      Show Trail: false
+      Value: true
     - Class: rviz/Image
       Enabled: true
       Image Topic: /camera_front/rgb/image_raw
@@ -383,7 +392,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.10000000149011612
       Style: Flat Squares
-      Topic: /cloud_concatenated
+      Topic: /pointcloud/concatenated
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -411,7 +420,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.15000000596046448
       Style: Flat Squares
-      Topic: /obstacles_laserscan
+      Topic: /mavros/obstacle/send
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -443,7 +452,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 49.013607025146484
+      Distance: 46.43798065185547
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -451,17 +460,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -16.728042602539062
-        Y: -0.22487401962280273
-        Z: 6.48468267172575e-06
+        X: -16.191905975341797
+        Y: -0.7346987724304199
+        Z: 5.3730204854218755e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8952031135559082
+      Pitch: 0.9502031803131104
       Target Frame: world
-      Yaw: 3.138634204864502
+      Yaw: 3.1436333656311035
     Saved:
       - Class: rviz/ThirdPersonFollower
         Distance: 17.48538589477539
@@ -507,5 +516,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1549
-  X: 105
-  Y: -15
+  X: 231
+  Y: 93

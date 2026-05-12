@@ -9,7 +9,7 @@
 	<arg name="cy" value="120.0"/>
 	<arg name="fx" value="160.0"/>
 	<arg name="fy" value="160.0"/>
-	<arg name="cloud_topic" default="/cloud_concatenated"/>
+	<arg name="cloud_topic" default="/pointcloud/concatenated"/>
 	<arg name="depth_topic" default="/dummy/image_raw"/>
 	<arg name="camera_pose" default="/dummy/pose"/>
 	<arg name="odom_topic" default="/mavros/local_position/odom" />

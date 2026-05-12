@@ -3,6 +3,10 @@
 # node:
 startup_px4_usb_quirk: false
 
+# global parameters
+base_link_id: "base_link"
+odom_id: "odom"
+
 # --- system plugins ---
 
 # sys_status & sys_time connection options
@@ -279,3 +283,7 @@ wheel_odometry:
 # camera
 camera:
   frame_id: "base_link"
+
+# obstacle distance for collision prevention
+obstacle:
+  mav_frame: "BODY_FRD"

@@ -341,6 +341,7 @@
           <robotNamespace></robotNamespace>
           <topicName>range_finder/data</topicName>
           <frameName>range_finder_link</frameName>
+          <update_rate>20</update_rate>
           <radiation>ultrasound</radiation>
           <fov>0.05</fov>
         </plugin>
