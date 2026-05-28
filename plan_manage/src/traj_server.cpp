@@ -4,7 +4,9 @@
 #include "std_msgs/Empty.h"
 #include "visualization_msgs/Marker.h"
 #include <ros/ros.h>
+#include <tf/tf.h>
 #include <mavros_msgs/PositionTarget.h>
+#include <geometry_msgs/PoseStamped.h>
 
 ros::Publisher px4_pos_cmd_pub;
 mavros_msgs::PositionTarget px4_cmd;
@@ -14,7 +16,7 @@ double vel_gain[3] = {0, 0, 0};
 
 using ego_planner::UniformBspline;
 
-bool receive_traj_ = false;
+bool in_mission_ = false;
 vector<UniformBspline> traj_;
 double traj_duration_;
 ros::Time start_time_;
@@ -23,6 +25,30 @@ int traj_id_;
 // yaw control
 double last_yaw_, last_yaw_dot_;
 double time_forward_;
+
+// Setpoint Control
+Eigen::Vector3d current_pos_ = Eigen::Vector3d::Zero();
+double current_yaw_ = 0.0;
+
+void poseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
+{
+    current_pos_(0) = msg->pose.position.x;
+    current_pos_(1) = msg->pose.position.y;
+    current_pos_(2) = msg->pose.position.z;
+
+    tf::Quaternion q(
+        msg->pose.orientation.x,
+        msg->pose.orientation.y,
+        msg->pose.orientation.z,
+        msg->pose.orientation.w);
+
+    tf::Matrix3x3 m(q);
+
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+
+    current_yaw_ = yaw;
+}
 
 void bsplineCallback(traj_utils::BsplineConstPtr msg)
 {
@@ -65,7 +91,7 @@ void bsplineCallback(traj_utils::BsplineConstPtr msg)
 
   traj_duration_ = traj_[0].getTimeSum();
 
-  receive_traj_ = true;
+  in_mission_ = true;
 }
 
 std::pair<double, double> calculate_yaw(double t_cur, Eigen::Vector3d &pos, ros::Time &time_now, ros::Time &time_last)
@@ -162,9 +188,32 @@ std::pair<double, double> calculate_yaw(double t_cur, Eigen::Vector3d &pos, ros:
 
 void cmdCallback(const ros::TimerEvent &e)
 {
-  /* no publishing before receive traj_ */
-  if (!receive_traj_)
+  /* Publishing own position to keep track on the drone */
+  if (!in_mission_)
+  {
+    px4_cmd.header.stamp = ros::Time::now();
+    px4_cmd.coordinate_frame = 1;
+    px4_cmd.type_mask = 0;
+
+    px4_cmd.position.x = current_pos_(0);
+    px4_cmd.position.y = current_pos_(1);
+    px4_cmd.position.z = current_pos_(2);
+
+    px4_cmd.velocity.x = 0;
+    px4_cmd.velocity.y = 0;
+    px4_cmd.velocity.z = 0;
+
+    px4_cmd.acceleration_or_force.x = 0;
+    px4_cmd.acceleration_or_force.y = 0;
+    px4_cmd.acceleration_or_force.z = 0;
+
+    px4_cmd.yaw = current_yaw_;
+    px4_cmd.yaw_rate = 0;
+
+    px4_pos_cmd_pub.publish(px4_cmd);
+
     return;
+  }
 
   ros::Time time_now = ros::Time::now();
   double t_cur = (time_now - start_time_).toSec();
@@ -197,6 +246,15 @@ void cmdCallback(const ros::TimerEvent &e)
     yaw_yawdot.second = 0;
 
     pos_f = pos;
+
+    /* Calculate the distance between current position and goal*/
+    double dist = (current_pos_ - pos).norm();
+
+    /*Mission invalidation or Trajectory ownership timeout or Change to Pilot Control*/ 
+    if (dist > 0.8) 
+    {
+      in_mission_ = false;
+    }
   }
   else
   {
@@ -235,6 +293,8 @@ int main(int argc, char **argv)
   ros::NodeHandle nh("~");
 
   ros::Subscriber bspline_sub = nh.subscribe("planning/bspline", 10, bsplineCallback);
+
+  ros::Subscriber pose_sub = nh.subscribe("/mavros/local_position/pose", 10, poseCallback);
 
   px4_pos_cmd_pub = nh.advertise<mavros_msgs::PositionTarget>("/mavros/setpoint_raw/local", 20);
 

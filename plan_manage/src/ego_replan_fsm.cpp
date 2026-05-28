@@ -210,14 +210,21 @@ namespace ego_planner
 
   void EGOReplanFSM::waypointCallback(const geometry_msgs::PoseStampedPtr &msg)
   {
-    if (msg->pose.position.z < -0.1)
+    if (msg->pose.position.z < -0.1 || msg->header.frame_id != "world")
       return;
 
     cout << "Triggered!" << endl;
     // trigger_ = true;
     init_pt_ = odom_pos_;
-
-    Eigen::Vector3d end_wp(msg->pose.position.x, msg->pose.position.y, 2.0);
+    Eigen::Vector3d end_wp;
+    if (msg->pose.position.z == 0.0)
+    {
+      end_wp = Eigen::Vector3d(msg->pose.position.x, msg->pose.position.y, 2.0);
+    }
+    else
+    {
+      end_wp = Eigen::Vector3d(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z);
+    }
 
     planNextWaypoint(end_wp);
   }

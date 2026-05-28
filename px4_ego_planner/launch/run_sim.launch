@@ -5,7 +5,7 @@
 	<arg name="gui" default="false"/>
 	<arg name="model" default="iris_360_depth_camera"/>
 
-	<arg name="fcu_url" default="udp://:14540@localhost:14557"/>
+	<arg name="fcu_url" default="udp://:14540@localhost:14580"/>
 	<arg name="gcs_url" default=""/>
 	<arg name="tgt_system" default="1"/>
 	<arg name="tgt_component" default="1" />
@@ -51,11 +51,13 @@
 	<node pkg="tf" type="static_transform_publisher" name="tf_back" args="-0.1 0 -0.03 3.1415 0 0 base_link back_camera_link 100" />
 	<node pkg="tf" type="static_transform_publisher" name="back_opt" args="0 0 0 -1.5708 0 -1.5708 back_camera_link back_camera_optical_frame 100" />
 
+	<node pkg="tf" type="static_transform_publisher" name="tf_range_finder" args="0 0 -0.05 0 1.5708 0 base_link range_finder_link 100" />
+
 	<!-- Concat the Pointcloud -->
 	<node pkg="px4_ego_planner" type="stable_tf_pub.py" name="stable_tf_pub" output="screen" />
 	<node pkg="px4_ego_planner" type="virtual_ground.py" name="virtual_ground" output="screen" />
 
-	<node pkg="pointcloud_concatenate" type="pointcloud_concatenate_node" name="pointcloud_concat_1" output="log">
+	<!-- <node pkg="pointcloud_concatenate" type="pointcloud_concatenate_node" name="pointcloud_concat_1" output="log">
 		<param name="target_frame" value="odom" />
 		<param name="clouds" value="4" />
 		<param name="hz" value="5" />
@@ -64,14 +66,14 @@
 		<remap from="cloud_in3" to="/camera_right/depth/points" />
 		<remap from="cloud_in4" to="/camera_back/depth/points" />
 		<remap from="cloud_out" to="/pointcloud/allaround" />
-	</node>
+	</node> -->
 
 	<node pkg="pointcloud_concatenate" type="pointcloud_concatenate_node" name="pointcloud_concat_2" output="log">
 		<param name="target_frame" value="odom" />
 		<param name="clouds" value="2" />
-		<param name="hz" value="5" />
+		<param name="hz" value="15" />
 		<remap from="cloud_in1" to="/pointcloud/ground" />
-		<remap from="cloud_in2" to="/pointcloud/allaround" />
+		<remap from="cloud_in2" to="/camera_front/depth/points" />
 		<remap from="cloud_out" to="/pointcloud/concatenated" />
 	</node>
 
@@ -96,5 +98,7 @@
 	<node name="visualization_node" pkg="px4_ego_planner" type="visualization_node"/>
 
 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find px4_ego_planner)/resource/sim.rviz" required="true" />
+
+	<include file="$(find px4_ego_planner)/launch/run_ego_sim.launch"/>
 
 </launch>

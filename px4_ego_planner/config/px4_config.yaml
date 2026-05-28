@@ -163,15 +163,20 @@ distance_sensor:
     #   orientation: PITCH_270
     #   horizontal_fov_ratio: 1.0   # horizontal_fov = horizontal_fov_ratio * msg.field_of_view
     #   vertical_fov_ratio: 1.0     # vertical_fov = vertical_fov_ratio * msg.field_of_view
-    # custom_orientation:       # Used for orientation == CUSTOM
-    #   roll: 0
-    #   pitch: 270
-    #   yaw: 0
-  laser_1_sub:
+
+    # Used for orientation == CUSTOM
+    #   custom_orientation:       
+    #     roll: 0
+    #     pitch: 270
+    #     yaw: 0
+  
+  terrain_estimator:
     subscriber: true
     id: 0
-    topic: "/range_finder/data"
     orientation: PITCH_270
+    field_of_view: 0.05
+    frame_id: "base_link_frd"
+    send_tf: false
 
 # image_pub
 image:
