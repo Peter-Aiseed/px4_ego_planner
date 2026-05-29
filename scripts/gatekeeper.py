@@ -297,10 +297,10 @@ class MasterGatekeeper:
                 rospy.loginfo(f"{GREEN}[MISSION] Count received: {msg.count}{ENDC}")
                 if msg.count > 0:
                     self.mission_total = msg.count
-                    self.send_fake_mission_request_int(0)
+                    # self.send_fake_mission_request_int(0)
                 else:
                     self.mission_total = 65535
-                    self.send_fake_mission_ack()
+                    # self.send_fake_mission_ack()
                 self.mission = []   # Clear previous mission items when a new MISSION_COUNT is received
                 self.mission_seq = 0
             
@@ -308,20 +308,20 @@ class MasterGatekeeper:
                 rospy.loginfo(f"{GREEN}[FENCE] Count received: {msg.count}{ENDC}")
                 if msg.count > 0:
                     self.fence_total = msg.count
-                    self.send_fake_mission_request_int(0, mission_type=1)
+                    # self.send_fake_mission_request_int(0, mission_type=1)
                 else:
                     self.fence_total = 0
-                    self.send_fake_mission_ack(mission_type=1)
+                    # self.send_fake_mission_ack(mission_type=1)
                 self.fence = []   # Clear previous mission items when a new MISSION_COUNT is received
             
             elif msg.mission_type == 2:
                 rospy.loginfo(f"{GREEN}[Rally] Count received: {msg.count}{ENDC}")
                 if msg.count > 0:
                     self.rally_total = msg.count
-                    self.send_fake_mission_request_int(0, mission_type=2)
+                    # self.send_fake_mission_request_int(0, mission_type=2)
                 else:
                     self.rally_total = 0
-                    self.send_fake_mission_ack(mission_type=2)
+                    # self.send_fake_mission_ack(mission_type=2)
                 self.rally = []   # Clear previous mission items when a new MISSION_COUNT is received
 
         # 2) MISSION_ITEM_INT
@@ -360,28 +360,28 @@ class MasterGatekeeper:
                 self.mission.append(item)
                 rospy.loginfo(f"{GREEN}[MISSION] Received item {item.seq}, cmd={item.command}{ENDC}")
                 print(item)
-                if not item.seq == self.mission_total - 1:
-                    self.send_fake_mission_request_int(msg.seq + 1)
-                else:
-                    self.send_fake_mission_ack()
+                # if not item.seq == self.mission_total - 1:
+                #     self.send_fake_mission_request_int(msg.seq + 1)
+                # else:
+                #     self.send_fake_mission_ack()
 
             elif msg.mission_type == 1:
                 self.fence.append(item)
                 rospy.loginfo(f"{GREEN}[FENCE] Received item {item.seq}, cmd={item.command}{ENDC}")
                 print(item)
-                if not item.seq == self.fence_total - 1:
-                    self.send_fake_mission_request_int(msg.seq + 1, mission_type=1)
-                else:
-                    self.send_fake_mission_ack(mission_type=1)
+                # if not item.seq == self.fence_total - 1:
+                #     self.send_fake_mission_request_int(msg.seq + 1, mission_type=1)
+                # else:
+                #     self.send_fake_mission_ack(mission_type=1)
             
             elif msg.mission_type == 2:
                 self.rally.append(item)
                 rospy.loginfo(f"{GREEN}[Rally] Received item {item.seq}, cmd={item.command}{ENDC}")
                 print(item)
-                if not item.seq == self.rally_total - 1:
-                    self.send_fake_mission_request_int(msg.seq + 1, mission_type=2)
-                else:
-                    self.send_fake_mission_ack(mission_type=2)
+                # if not item.seq == self.rally_total - 1:
+                #     self.send_fake_mission_request_int(msg.seq + 1, mission_type=2)
+                # else:
+                #     self.send_fake_mission_ack(mission_type=2)
         
         # 3) MISSION_CLEAR_ALL
         elif q_type == "MISSION_CLEAR_ALL":
@@ -389,17 +389,17 @@ class MasterGatekeeper:
                 self.mission = []
                 self.mission_seq = 0
                 self.mission_total = 65535
-                self.send_fake_mission_ack()
+                # self.send_fake_mission_ack()
             
             elif msg.mission_type == 1:
                 self.fence = []
                 self.fence_total = 0
-                self.send_fake_mission_ack(mission_type=1)
+                # self.send_fake_mission_ack(mission_type=1)
             
             elif msg.mission_type == 2:
                 self.rally = []
                 self.rally_total = 0
-                self.send_fake_mission_ack(mission_type=2)
+                # self.send_fake_mission_ack(mission_type=2)
 
     # -------------------------------------------------------------------
 
@@ -527,9 +527,8 @@ class MasterGatekeeper:
                     self.qgc_conn.mav.mission_current_send(self.mission_seq, self.mission_total, 0, 0)
                     continue
 
-                # elif "MISSION" in p_type:
-                #     rospy.loginfo(f"{YELLOW}Drone ---> Mission Command: {p_type} Received ---> QGC{ENDC}")
-                #     print(msg_p)
+                elif "MISSION" in p_type:
+                    rospy.loginfo(f"{CYAN}Drone ---> {msg_p} ---> QGC{ENDC}")
 
                 # -------------------------------------------------------------------
                 #                              HEARTBEAT                            
@@ -649,7 +648,6 @@ class MasterGatekeeper:
                                 self.call_planner(self.local_position[0], self.local_position[1], self.local_position[2] + 0.3)
                     
                     self.current_mode = mode_name
-                    print(msg_q)
                     self.px4_conn.write(msg_q.get_msgbuf())
                 
                 # -------------------------------------------------------------------
@@ -657,10 +655,7 @@ class MasterGatekeeper:
                 # -------------------------------------------------------------------
                 elif q_type in ["MISSION_COUNT", "MISSION_ITEM_INT", "MISSION_CLEAR_ALL"]:
                     self.handle_mission_message(msg_q)
-
-                # elif "MISSION" in q_type:
-                #     rospy.loginfo(f"{YELLOW}QGC ---> Mission Command: {q_type} Received ---> Drone{ENDC}")
-                #     print(msg_p)
+                    self.px4_conn.write(msg_q.get_msgbuf())
 
                 # -------------------------------------------------------------------
                 #                               ELSE                            
