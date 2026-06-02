@@ -90,6 +90,8 @@ class MasterGatekeeper:
         self.home_alt = None        # Global Position Relative Altitude in meters
         self.current_mode = "Initial"
         self.planner_goal = None
+        self.change_to_hold = False
+        self.change_to_hold_time = rospy.Time.now()
         
         # Mission Stats
         self.mission = []
@@ -436,17 +438,9 @@ class MasterGatekeeper:
 
                     if self.mission_seq  == self.mission_total - 1:
                         self.holding = False
-                        self.px4_conn.mav.command_long_send(
-                            1,  # target system
-                            1,  # target component
-                            mavutil.mavlink.MAV_CMD_DO_SET_MODE,
-                            0,
-                            1,  # MAV_MODE_FLAG_CUSTOM_MODE_ENABLED
-                            4,  # PX4_CUSTOM_MAIN_MODE_AUTO
-                            3,  # PX4_CUSTOM_SUB_MODE_LOITER
-                            0, 0, 0, 0
-                        )
-                        self.current_mode = self.get_px4_mode_names(PX4_AUTO_LOITER)
+                        self.change_to_hold = True
+                        self.change_to_hold_time = rospy.Time.now()
+                        self.current_mode = self.get_px4_mode_names(PX4_OFFBOARD)
                         rospy.loginfo(f"{GREEN}--- Mission Finish All ---{ENDC}")
                     
                     else:
@@ -461,16 +455,23 @@ class MasterGatekeeper:
             elif "OFFBOARD" in self.current_mode and self.planner_goal is not None:
                 if self.planner_finish():
                     self.planner_goal = None
+                    self.change_to_hold = True
+                    self.change_to_hold_time = rospy.Time.now()
+                    self.current_mode = self.get_px4_mode_names(PX4_OFFBOARD)
+            
+            elif "OFFBOARD" in self.current_mode and self.change_to_hold is True:
+                if rospy.Time.now() >= self.change_to_hold_time + rospy.Duration(5.0):
+                    self.change_to_hold = False
                     self.px4_conn.mav.command_long_send(
-                            1,  # target system
-                            1,  # target component
-                            mavutil.mavlink.MAV_CMD_DO_SET_MODE,
-                            0,
-                            1,  # MAV_MODE_FLAG_CUSTOM_MODE_ENABLED
-                            4,  # PX4_CUSTOM_MAIN_MODE_AUTO
-                            3,  # PX4_CUSTOM_SUB_MODE_LOITER
-                            0, 0, 0, 0
-                        )
+                        1,  # target system
+                        1,  # target component
+                        mavutil.mavlink.MAV_CMD_DO_SET_MODE,
+                        0,
+                        1,  # MAV_MODE_FLAG_CUSTOM_MODE_ENABLED
+                        4,  # PX4_CUSTOM_MAIN_MODE_AUTO
+                        3,  # PX4_CUSTOM_SUB_MODE_LOITER
+                        0, 0, 0, 0
+                    )
                     self.current_mode = self.get_px4_mode_names(PX4_AUTO_LOITER)
 
             # ************************************************************************************************
@@ -637,8 +638,12 @@ class MasterGatekeeper:
                             rospy.loginfo(f"{GREEN}--- Mission Mode Started ---{ENDC}")
                             self.current_mode = mode_name
                             continue
+                    
+                    elif "OFFBOARD" in mode_name:
+                        self.change_to_hold = True
+                        self.change_to_hold_time = rospy.Time.now()
 
-                    # Other Modes that should stop the planner
+                    # Other Modes that not using the planner
                     else:
                         if "LAND" in mode_name:
                             rospy.loginfo(f"{RED}--- Landing Mode Activated ---{ENDC}")

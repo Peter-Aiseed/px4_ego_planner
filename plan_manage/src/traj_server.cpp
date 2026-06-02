@@ -251,7 +251,7 @@ void cmdCallback(const ros::TimerEvent &e)
     double dist = (current_pos_ - pos).norm();
 
     /*Mission invalidation or Trajectory ownership timeout or Change to Pilot Control*/ 
-    if (dist > 1.0) 
+    if (dist > 1.0 || t_cur >= traj_duration_ + 5.0) 
     {
       in_mission_ = false;
     }
