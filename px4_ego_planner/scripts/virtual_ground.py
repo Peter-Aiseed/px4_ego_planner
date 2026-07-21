@@ -40,7 +40,7 @@ class VirtualGroundGenerator:
 
         # --- Pubs/Subs ---
         # Subscribe to your rangefinder (change topic name if needed)
-        self.range_sub = rospy.Subscriber('/range_finder/data', Range, self.range_callback)
+        self.range_sub = rospy.Subscriber('/mavros/distance_sensor/ark_flow_range_pub', Range, self.range_callback)
         self.cloud_pub = rospy.Publisher('/pointcloud/ground', PointCloud2, queue_size=1)
 
         rospy.loginfo(f"Virtual Ground active. Frame: {self.target_frame}, Points: {self.num_points}")

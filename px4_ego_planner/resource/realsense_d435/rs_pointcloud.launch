@@ -1,0 +1,41 @@
+<launch>
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+    <arg name="enable_color"               value="false"/>
+    <arg name="enable_depth"               value="true"/>
+    <arg name="enable_infra1"              value="true"/>     <!-- needed for texture -->
+    <arg name="enable_confidence"          value="false"/>
+    <arg name="enable_pointcloud"          value="true"/>
+    <arg name="enable_sync"                value="true"/>
+    <arg name="align_depth"                value="false"/>
+
+    <!-- Use infrared as pointcloud texture since D430 has no color -->
+    <arg name="pointcloud_texture_stream"  value="RS2_STREAM_INFRARED"/>
+    <arg name="pointcloud_texture_index"   value="1"/>
+
+    <arg name="depth_width"                value="424"/>
+    <arg name="depth_height"               value="240"/>
+    <arg name="depth_fps"                  value="30"/>
+    <arg name="infra_width"                value="424"/>
+    <arg name="infra_height"               value="240"/>
+    <arg name="infra_fps"                  value="30"/>
+
+    <arg name="enable_accel"               value="false"/>
+    <arg name="enable_gyro"                value="false"/>
+  </include>
+
+  <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="cloud_to_scan">
+		<remap from="cloud_in" to="/camera/depth/color/points"/>
+		<remap from="scan" to="/pointcloud/realsense/laserscan"/>
+		<param name="target_frame" value="base_link_stable"/>
+    <param name="transform_tolerance" value="0.2"/>
+		<param name="min_height" value="-0.5"/>
+		<param name="max_height" value="0.5"/>
+		<param name="angle_min" value="-0.7853981634"/>
+		<param name="angle_max" value="0.7853981634"/>
+		<param name="angle_increment" value="0.0087266463"/>
+		<param name="range_min" value="1.0"/>
+		<param name="range_max" value="9.8"/>
+		<param name="use_inf" value="true"/>
+	</node>
+
+</launch>

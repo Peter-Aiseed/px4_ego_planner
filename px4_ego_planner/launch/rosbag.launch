@@ -1,27 +1,17 @@
 <launch>
-  <arg name="bag_path" default="/home/peter/rosbag_dataset/rosbag/20260416/" />
+  <arg name="bag_path" default="/ws_ego/src/px4_ego_planner/rosbag/" />
   
   <node pkg="rosbag" type="record" name="drone_recorder" output="screen"
     args="record -o $(arg bag_path)
-            /camera1/camera_info
-            /camera1/image_raw/compressed
-            /camera2/camera_info
-            /camera2/image_raw/compressed
-            /camera3/camera_info
-            /camera3/image_raw/compressed
-            /diagnostics
-            /mavros/global_position/compass_hdg
-            /mavros/global_position/global
-            /mavros/global_position/raw/fix
-            /mavros/global_position/raw/gps_vel
-            /mavros/local_position/accel
-            /mavros/local_position/odom
+	          /pointcloud/realsense/laserscan
+            /tof_sensor_left/pointcloud
+            /tof_sensor_right/pointcloud
+            /tof_sensor_back/pointcloud
+            /mavros/obstacle/send
             /mavros/local_position/pose
-            /mavros/local_position/velocity_body
-            /mavros/local_position/velocity_local
-            /mavros/imu/data
-            /mavros/imu/mag
-            /mavros/time_reference
+            /mavros/local_position/odom
+            /costmap_node/costmap/costmap
+            /costmap_node/costmap/costmap_updates
             /tf
             /tf_static" />
 </launch>

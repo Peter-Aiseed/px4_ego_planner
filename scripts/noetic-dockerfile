@@ -1,0 +1,138 @@
+FROM ubuntu:20.04
+ENV DEBIAN_FRONTEND=noninteractive
+
+# ── Core utilities ────────────────────────────────────────────────────────────
+RUN apt-get update && apt-get install -y \
+    lsb-release curl gnupg2 ca-certificates \
+    git wget xauth x11-apps \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── OpenCV 4.2 ────────────────────────────────────────────────────────────────
+RUN apt-get update && apt-get install -y \
+    libopencv-dev \
+    libopencv-core4.2 \
+    python3-opencv \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── librealsense2 build dependencies (per realsenseai docs) ──────────────────
+# Step 1: SSL, USB, udev, pkg-config, GTK
+RUN apt-get update && apt-get install -y \
+    libssl-dev \
+    libusb-1.0-0-dev \
+    libudev-dev \
+    pkg-config \
+    libgtk-3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Step 2: Build tools
+RUN apt-get update && apt-get install -y \
+    cmake \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Step 3: OpenGL / GLFW (needed for graphical examples and RViz texture display)
+RUN apt-get update && apt-get install -y \
+    libglfw3-dev \
+    libgl1-mesa-dev \
+    libglu1-mesa-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Clone and build librealsense2 from realsenseai fork ────────────────────────
+# FORCE_RSUSB_BACKEND=ON is mandatory inside Docker — we cannot patch kernel
+# modules, so we use the userspace USB backend instead.
+# BUILD_EXAMPLES=false keeps the image smaller; flip to true if you want
+# realsense-viewer and the demo tools available inside the container.
+RUN git clone --depth 1 https://github.com/realsenseai/librealsense.git /opt/librealsense
+
+RUN mkdir -p /opt/librealsense/build && \
+    cd /opt/librealsense/build && \
+    cmake ../ \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DFORCE_RSUSB_BACKEND=ON \
+      -DBUILD_EXAMPLES=false \
+      -DBUILD_GRAPHICAL_EXAMPLES=false \
+      -DBUILD_WITH_DDS=OFF \
+      -DCHECK_FOR_UPDATES=OFF && \
+    make -j$(($(nproc)-1)) && \
+    make install && \
+    ldconfig && \
+    rm -rf /opt/librealsense/build
+
+# NOTE (run once on the Pi HOST, not inside the container):
+#   cd /opt/librealsense && sudo ./scripts/setup_udev_rules.sh
+# This installs udev rules so the camera USB device is accessible without root.
+# You only need to do this once per host machine.
+
+# ── ROS Noetic ────────────────────────────────────────────────────────────────
+RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" \
+    > /etc/apt/sources.list.d/ros-latest.list' && \
+    apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' \
+    --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+
+RUN apt-get update && apt-get install -y \
+    ros-noetic-desktop-full \
+    python3-catkin-tools \
+    python3-osrf-pycommon \
+    libeigen3-dev \
+    libboost-all-dev \
+    libceres-dev \
+    ros-noetic-ddynamic-reconfigure \
+    && rm -rf /var/lib/apt/lists/*
+
+    # rosdep & ROS tool dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool && \
+    rm -rf /var/lib/apt/lists/* && \
+    rosdep init || true && \
+    rosdep update
+
+# ── Building mavros ───────────────────────────────────────────────────────────
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      ros-noetic-mavros ros-noetic-mavros-extras ros-noetic-control-toolbox \
+      ros-noetic-octomap* libpcl1 && \
+    /opt/ros/noetic/lib/mavros/install_geographiclib_datasets.sh && \
+    rm -rf /var/lib/apt/lists/*
+
+# ── Workspace: realsense-ros (ROS1 legacy wrapper) ────────────────────────────
+# We build the ROS realsense wrapper from source so it links against
+# the librealsense2 we just installed, not a mismatched apt version.
+RUN mkdir -p /ws_ros1/src && \
+    cd /ws_ros1/src && \
+    git clone --branch ros1-legacy \
+        https://github.com/realsenseai/realsense-ros.git
+
+RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && \
+    cd /ws_ros1 && \
+    catkin config --cmake-args -DCMAKE_BUILD_TYPE=Debug"
+
+# Build realsense-ros first (other packages don't depend on it)
+RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && \
+    cd /ws_ros1 && \
+    catkin build realsense2_camera realsense2_description \
+      --cmake-args -DCMAKE_BUILD_TYPE=Debug"
+
+# ── TF2 Sensor Msgs and Costmap-2d ────────────────────────────────────────────
+RUN apt-get update && apt-get install -y \
+    ros-noetic-tf2-sensor-msgs \
+    ros-noetic-pointcloud-to-laserscan \
+    ros-noetic-costmap-2d \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Python deps ──────────────────────────────────────────────────────────────
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    python3-wheel \
+    python3-lxml \
+    python3-serial \
+    nano \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install numpy pandas scipy pymavlink
+
+RUN echo "source /opt/ros/noetic/setup.bash" >> /root/.bashrc && \
+    echo "source /ws_ros1/devel/setup.bash" >> /root/.bashrc
+
+WORKDIR /ws_ros1
+CMD ["/bin/bash"]

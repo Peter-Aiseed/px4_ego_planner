@@ -1,38 +1,36 @@
 <launch>
 
-  <!-- launch mavros to communicate with PX4 -->
-	<include file="$(find mavros)/launch/px4.launch">
-		<arg name="fcu_url" value="udp://:14540@192.168.0.3:14557"/>
-		<!--arg name="fcu_url" value="serial:///dev/ttyACM0:57600" /-->
+  <!-- Mavros Node -->
+	<include file="$(find mavros)/launch/node.launch">
+		<arg name="pluginlists_yaml" value="$(find px4_ego_planner)/config/px4_pluginlists.yaml" />
+		<arg name="config_yaml" value="$(find px4_ego_planner)/config/px4_config.yaml" />
+		<arg name="fcu_url" value="/dev/ttyAMA3:921600" />
+		<!-- <arg name="gcs_url" value="udp://@172.17.0.1:14550" /> -->
+		<arg name="gcs_url" value="" />
+		<arg name="tgt_system" value="1" />
+		<arg name="tgt_component" value="1" />
 	</include>
 
-	<!-- open realsense camera -->
-	<include file="$(find px4_ego_planner)/resource/realsense_d455/rs_camera.launch">
-		<!-- arg name="align_depth" value="true"/ -->
-		<!-- arg name="filters" value="spatial,temporal,hole_filling"/ -->
-	</include>
-
-	<!-- start vins for localization -->
-	<node name="vins_estimator" pkg="vins" type="vins_node" args="$(find px4_ego_planner)/resource/realsense_d455/calibration.yaml"/>
+	<!-- Realsense Camera -->
+	<include file="$(find px4_ego_planner)/resource/realsense_d435/rs_pointcloud.launch"/>
     
-	<!-- build the tf tree between map and world, which is required by ego planner -->
-	<node pkg="tf" type="static_transform_publisher" name="map_to_world" args="0 0 0 0 0 0 world map 10"/>
-	
-	<!-- start transferring data to PX4 -->
-	<node name="vins_transfer" pkg="px4_ego_planner" type="vins_transfer" output="screen"/>
+	<!-- TF Tree -->
+	<node pkg="tf" type="static_transform_publisher" name="world_to_map" args="0 0 0 0 0 0 world map 10"/>
+	<node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 10"/>
+	<node pkg="tf" type="static_transform_publisher" name="base_to_camera" args="0.1 0 0 0 0 0 base_link camera_link 10"/>
 
-	<!-- spawn robot's visualization model -->
-	<node name="visualization_node" pkg="px4_ego_planner" type="visualization_node"/>
+	<!-- Stable TF Publisher and Virtual Ground from arkflow data -->
+	<node pkg="px4_ego_planner" type="stable_tf_pub.py" name="stable_tf_pub" output="screen" />
+	<node pkg="px4_ego_planner" type="virtual_ground.py" name="virtual_ground" output="screen" />
 
-	<!-- start Rviz -->
-	<!--	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find px4_ego_planner)/resource/real.rviz" required="true"/> -->
+	<!-- TOF sensors -->
+	<include file="$(find px4_ego_planner)/launch/tof_sensor.launch"/>
 
-	<!-- start flight mode manager -->
-	<node name="real_mode_manager" pkg="px4_ego_planner" type="real_mode_manager" output="screen">
-		<param name="desired_altitude" value="0.5"/>
+	<!-- Costmap_2d Node -->
+	<node name="costmap_node" pkg="costmap_2d" type="costmap_2d_node" output="screen">
+		<rosparam file="$(find px4_ego_planner)/config/local_costmap_params.yaml" command="load"/>
 	</node>
 
-	<!-- increase the frequency of the topics related to odometry -->
-	<node pkg="mavros" type="mavsys" name="set_message_interval" output="screen" args="message_interval --id=32 --rate=50"/>
+	<node pkg="px4_ego_planner" type="scan_to_mavros.py" name="costmap_to_mavros" output="screen"/>
 
 </launch>	

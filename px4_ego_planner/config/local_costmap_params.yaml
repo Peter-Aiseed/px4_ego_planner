@@ -1,0 +1,61 @@
+# Inside px4_ego_planner/config/local_costmap_params.yaml
+costmap:
+  global_frame: odom_drone_z
+  robot_base_frame: base_link           # Drone's center frame
+  
+  update_frequency: 10.0                # Refresh map 10 times a second
+  publish_frequency: 5.0
+  rolling_window: true                  # Keeps the map centered on the moving drone
+  static_map: false                     # No static map, only dynamic obstacles
+  
+  width: 20.0                           # Map boundaries (20m x 20m)
+  height: 20.0
+  resolution: 0.1                       # Grid accuracy (10cm cells)
+
+  # Define the layer pipeline
+  plugins:
+    - {name: obstacle_layer, type: "costmap_2d::ObstacleLayer"}
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+  
+
+  obstacle_layer:
+    enabled: true
+    obstacle_range: 9.5
+    raytrace_range: 9.8
+
+    observation_sources: rs_source tof_left tof_right tof_back
+
+    rs_source:
+      topic: /pointcloud/realsense/laserscan
+      data_type: LaserScan
+      marking: true
+      clearing: true
+      inf_is_valid: true
+
+
+    tof_back:
+      topic: /tof_sensor_back/pointcloud
+      data_type: PointCloud2
+      marking: true
+      clearing: false
+      obstacle_range: 9.0
+      raytrace_range: 9.5
+
+    tof_left:
+      topic: /tof_sensor_left/pointcloud
+      data_type: PointCloud2
+      marking: true
+      clearing: false
+      obstacle_range: 9.0
+      raytrace_range: 9.5
+
+    tof_right:
+      topic: /tof_sensor_right/pointcloud
+      data_type: PointCloud2
+      marking: true
+      clearing: false
+      obstacle_range: 9.0
+      raytrace_range: 9.5
+
+  inflation_layer:
+    enabled: false

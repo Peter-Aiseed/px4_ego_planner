@@ -170,13 +170,14 @@ distance_sensor:
     #     pitch: 270
     #     yaw: 0
   
-  terrain_estimator:
-    subscriber: true
+  ark_flow_range_pub:
+    subscriber: false
     id: 0
     orientation: PITCH_270
     field_of_view: 0.05
-    frame_id: "base_link_frd"
-    send_tf: false
+    frame_id: "ark_flow_link"
+    send_tf: true
+    sensor_position: {x:  0.0, y:  0.0, z:  -0.18}
 
 # image_pub
 image:

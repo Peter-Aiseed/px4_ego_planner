@@ -1,0 +1,29 @@
+<launch>
+
+    <node pkg="tf" type="static_transform_publisher" name="base_to_tof_left" 
+          args="0.0 0.10 -0.04 1.5708 -0.1745 0.0 base_link tof_left_link 100" />
+
+    <node pkg="tf" type="static_transform_publisher" name="base_to_tof_right" 
+          args="0.0 -0.10 -0.04 -1.5708 -0.1745 0.0 base_link tof_right_link 100" />
+
+    <node pkg="tf" type="static_transform_publisher" name="base_to_tof_back" 
+          args="-0.10 0.0 -0.04 3.1415 -0.1745 0.0 base_link tof_back_link 100" />
+
+    <node pkg="px4_ego_planner" type="afbr_s50_ros_node.py" name="tof_sensor_back" output="screen">
+        <param name="port" value="/dev/ttyAMA0" />
+        <param name="mode" value="3d" />
+        <param name="frame_id" value="tof_back_link" />
+    </node>
+
+    <node pkg="px4_ego_planner" type="afbr_s50_ros_node.py" name="tof_sensor_left" output="screen">
+        <param name="port" value="/dev/ttyAMA1" />
+        <param name="mode" value="3d" />
+        <param name="frame_id" value="tof_left_link" />
+    </node>
+
+    <node pkg="px4_ego_planner" type="afbr_s50_ros_node.py" name="tof_sensor_right" output="screen">
+        <param name="port" value="/dev/ttyAMA2" />
+        <param name="mode" value="3d" />
+        <param name="frame_id" value="tof_right_link" />
+    </node>
+</launch>

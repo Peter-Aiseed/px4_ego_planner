@@ -68,6 +68,25 @@ def broadcast_stable_frames():
             frd_t.transform.rotation.w = q_frd[3]
             br.sendTransform(frd_t)
 
+            # --- BROADCAST ALTITUDE ORIGIN FRAME (odom_drone_z) ---
+            # Stays at XY = (0,0) but matches drone's altitude. Zero rotation.
+            z_t = geometry_msgs.msg.TransformStamped()
+            z_t.header.stamp = t.header.stamp
+            z_t.header.frame_id = "odom"
+            z_t.child_frame_id = "odom_drone_z"
+            
+            # Position: (0, 0, z_drone)
+            z_t.transform.translation.x = 0.0
+            z_t.transform.translation.y = 0.0
+            z_t.transform.translation.z = trans.z
+            
+            # Orientation: Identity Quaternion (Roll=0, Pitch=0, Yaw=0)
+            z_t.transform.rotation.x = 0.0
+            z_t.transform.rotation.y = 0.0
+            z_t.transform.rotation.z = 0.0
+            z_t.transform.rotation.w = 1.0
+            br.sendTransform(z_t)
+
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             continue
         rate.sleep()

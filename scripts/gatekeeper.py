@@ -106,11 +106,11 @@ class MasterGatekeeper:
 
         try:
             # 14550 = Drone
-            self.px4_conn = mavutil.mavlink_connection('udpin:127.0.0.1:14550')
+            self.px4_conn = mavutil.mavlink_connection('udpin:0.0.0.0:14550')
             self.px4_conn.mav.srcSystem = 255
             self.px4_conn.mav.srcComponent = 190
             # 14590 = QGC
-            self.qgc_conn = mavutil.mavlink_connection('udpin:127.0.0.1:14590')
+            self.qgc_conn = mavutil.mavlink_connection('udpin:0.0.0.0:14590')
             self.qgc_conn.mav.srcSystem = 1
             self.qgc_conn.mav.srcComponent = 1
             

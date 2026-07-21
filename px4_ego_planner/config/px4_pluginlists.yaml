@@ -4,9 +4,9 @@ plugin_blacklist:
 # extras
 - image_pub
 - vibration
-- distance_sensor
 - rangefinder
 - wheel_odometry
+- px4flow
 
 
 plugin_whitelist: []
