@@ -21,7 +21,11 @@
 
     <arg name="enable_accel"               value="false"/>
     <arg name="enable_gyro"                value="false"/>
+
+    <arg name="filters"                    value="decimation"/>
   </include>
+
+    <param name="/camera/decimation/filter_magnitude" type="int" value="2"/>
 
   <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="cloud_to_scan">
 		<remap from="cloud_in" to="/camera/depth/color/points"/>

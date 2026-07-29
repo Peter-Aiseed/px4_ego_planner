@@ -1,15 +1,15 @@
 <launch>
-	<arg name="map_size_x" value="200.0"/>
-	<arg name="map_size_y" value="200.0"/>
-	<arg name="map_size_z" value="50.0"/>
-	<arg name="max_vel" value="3.0" />
+	<arg name="map_size_x" value="100.0"/>
+	<arg name="map_size_y" value="100.0"/>
+	<arg name="map_size_z" value="30.0"/>
+	<arg name="max_vel" value="2.0" />
 	<arg name="max_acc" value="2.0" />
 	<arg name="planning_horizon" value="12.0" />
 	<arg name="cx" value="160.0"/>
 	<arg name="cy" value="120.0"/>
 	<arg name="fx" value="160.0"/>
 	<arg name="fy" value="160.0"/>
-	<arg name="cloud_topic" default="/pointcloud/concatenated"/>
+	<arg name="cloud_topic" default="/camera/depth/color/points"/>
 	<arg name="depth_topic" default="/dummy/image_raw"/>
 	<arg name="camera_pose" default="/dummy/pose"/>
 	<arg name="odom_topic" default="/mavros/local_position/odom" />

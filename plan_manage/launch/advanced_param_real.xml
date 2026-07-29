@@ -44,7 +44,7 @@
 
   <!-- main node -->
   <!-- <node pkg="ego_planner" name="ego_planner_node" type="ego_planner_node" output="screen" launch-prefix="valgrind"> -->
-  <node pkg="ego_planner" name="drone_$(arg drone_id)_ego_planner_node" type="ego_planner_node" output="log">
+  <node pkg="ego_planner" name="drone_$(arg drone_id)_ego_planner_node" type="ego_planner_node" output="screen">
 
     <remap from="~odom_world" to="$(arg odometry_topic)"/>
     <remap from="~planning/bspline" to="/drone_$(arg drone_id)_planning/bspline"/>
@@ -86,7 +86,7 @@
     <param name="fsm/waypoint4_y" value="$(arg point4_y)" type="double"/>
     <param name="fsm/waypoint4_z" value="$(arg point4_z)" type="double"/>
 
-    <param name="grid_map/resolution" value="0.15" />
+    <param name="grid_map/resolution" value="0.25" />
     <param name="grid_map/map_size_x" value="$(arg map_size_x_)" />
     <param name="grid_map/map_size_y" value="$(arg map_size_y_)" />
     <param name="grid_map/map_size_z" value="$(arg map_size_z_)" />
@@ -112,6 +112,10 @@
     <param name="grid_map/k_depth_scaling_factor" value="1000.0"/>
     <param name="grid_map/skip_pixel" value="4"/>
 
+    <!-- Pointcloud Filter -->
+    <param name="grid_map/pointcloud_maxdist" value="10.0"/>
+    <param name="grid_map/pointcloud_mindist" value="1.0"/>
+
     <!-- local fusion -->
     <param name="grid_map/p_hit" value="0.65"/>
     <param name="grid_map/p_miss" value="0.35"/>
@@ -119,10 +123,10 @@
     <param name="grid_map/p_max" value="0.90"/>
     <param name="grid_map/p_occ" value="0.80"/>
     <param name="grid_map/min_ray_length" value="0.5"/>
-    <param name="grid_map/max_ray_length" value="8.0"/>
+    <param name="grid_map/max_ray_length" value="10.0"/>
 
-    <param name="grid_map/virtual_ceil_height" value="49.5"/>
-    <param name="grid_map/visualization_truncate_height" value="49.0"/>
+    <param name="grid_map/virtual_ceil_height" value="29.5"/>
+    <param name="grid_map/visualization_truncate_height" value="29.0"/>
     <param name="grid_map/show_occ_time" value="false"/>
     <param name="grid_map/pose_type" value="2"/>
     <param name="grid_map/frame_id" value="map"/>

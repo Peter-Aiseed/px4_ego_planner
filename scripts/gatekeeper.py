@@ -516,9 +516,9 @@ class MasterGatekeeper:
                 # -------------------------------------------------------------------
                 #                             COMMAND_ACK                            
                 # -------------------------------------------------------------------
-                elif p_type == 'COMMAND_ACK':
-                    # Intercept ACKs from the px4 and prevent them from reaching QGC
-                    rospy.loginfo(f"{YELLOW}{msg_p}{ENDC}")
+                # elif p_type == 'COMMAND_ACK':
+                #     # Intercept ACKs from the px4 and prevent them from reaching QGC
+                #     rospy.loginfo(f"{YELLOW}{msg_p}{ENDC}")
 
                 # -------------------------------------------------------------------
                 #                              MISSION                            

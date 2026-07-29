@@ -31,6 +31,9 @@ void GridMap::initMap(ros::NodeHandle &nh)
   node_.param("grid_map/k_depth_scaling_factor", mp_.k_depth_scaling_factor_, -1.0);
   node_.param("grid_map/skip_pixel", mp_.skip_pixel_, -1);
 
+  node_.param("grid_map/pointcloud_maxdist", mp_.pointcloud_maxdist_, -1.0);
+  node_.param("grid_map/pointcloud_mindist", mp_.pointcloud_mindist_, -1.0);
+
   node_.param("grid_map/p_hit", mp_.p_hit_, 0.70);
   node_.param("grid_map/p_miss", mp_.p_miss_, 0.35);
   node_.param("grid_map/p_min", mp_.p_min_, 0.12);
@@ -798,6 +801,11 @@ void GridMap::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &img)
 
     /* point inside update range */
     Eigen::Vector3d devi = p3d - md_.camera_pos_;
+
+    double d = devi.norm();
+    /* point inside pointcloud range */
+    if (d < mp_.pointcloud_mindist_ || d > mp_.pointcloud_maxdist_) continue;
+
     Eigen::Vector3i inf_pt;
 
     if (fabs(devi(0)) < mp_.local_update_range_(0) && fabs(devi(1)) < mp_.local_update_range_(1) &&

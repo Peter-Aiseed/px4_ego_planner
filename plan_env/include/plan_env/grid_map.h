@@ -68,6 +68,9 @@ struct MappingParameters {
   double k_depth_scaling_factor_;
   int skip_pixel_;
 
+  /* pointcloud filtering */
+  double pointcloud_maxdist_, pointcloud_mindist_;
+
   /* raycasting */
   double p_hit_, p_miss_, p_min_, p_max_, p_occ_;  // occupancy probability
   double prob_hit_log_, prob_miss_log_, clamp_min_log_, clamp_max_log_,

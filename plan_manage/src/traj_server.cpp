@@ -188,13 +188,24 @@ std::pair<double, double> calculate_yaw(double t_cur, Eigen::Vector3d &pos, ros:
 
 void cmdCallback(const ros::TimerEvent &e)
 {
+  ros::Time time_now = ros::Time::now();
+  static ros::Time time_last = ros::Time::now();
+
   /* Publishing own position to keep track on the drone */
   if (!in_mission_)
   {
-    px4_cmd.header.stamp = ros::Time::now();
-    px4_cmd.coordinate_frame = 1;
-    px4_cmd.type_mask = 0;
+    time_last = time_now;
+    px4_cmd.header.stamp = time_now;
 
+    px4_cmd.coordinate_frame = 1;
+    px4_cmd.type_mask = mavros_msgs::PositionTarget::IGNORE_VX |
+                        mavros_msgs::PositionTarget::IGNORE_VY |
+                        mavros_msgs::PositionTarget::IGNORE_VZ |
+                        mavros_msgs::PositionTarget::IGNORE_AFX |
+                        mavros_msgs::PositionTarget::IGNORE_AFY |
+                        mavros_msgs::PositionTarget::IGNORE_AFZ |
+                        mavros_msgs::PositionTarget::IGNORE_YAW_RATE;
+                        
     px4_cmd.position.x = current_pos_(0);
     px4_cmd.position.y = current_pos_(1);
     px4_cmd.position.z = current_pos_(2);
@@ -208,6 +219,8 @@ void cmdCallback(const ros::TimerEvent &e)
     px4_cmd.acceleration_or_force.z = 0;
 
     px4_cmd.yaw = current_yaw_;
+    last_yaw_ = current_yaw_;
+
     px4_cmd.yaw_rate = 0;
 
     px4_pos_cmd_pub.publish(px4_cmd);
@@ -215,13 +228,11 @@ void cmdCallback(const ros::TimerEvent &e)
     return;
   }
 
-  ros::Time time_now = ros::Time::now();
   double t_cur = (time_now - start_time_).toSec();
 
   Eigen::Vector3d pos(Eigen::Vector3d::Zero()), vel(Eigen::Vector3d::Zero()), acc(Eigen::Vector3d::Zero()), pos_f;
   std::pair<double, double> yaw_yawdot(0, 0);
 
-  static ros::Time time_last = ros::Time::now();
   if (t_cur < traj_duration_ && t_cur >= 0.0)
   {
     pos = traj_[0].evaluateDeBoorT(t_cur);
@@ -259,6 +270,8 @@ void cmdCallback(const ros::TimerEvent &e)
   else
   {
     cout << "[Traj server]: invalid time." << endl;
+    time_last = time_now;
+    return;
   }
   time_last = time_now;
 
