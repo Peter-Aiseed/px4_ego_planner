@@ -1,0 +1,49 @@
+<launch>
+  <!-- ================= ARGS ================= -->
+  <arg name="bag_path"   default="$(find px4_ego_planner)/rosbag/" />
+  <arg name="bag_prefix" default="ego_debug" />
+  <arg name="drone_id"   default="0" />
+
+  <!-- Verify with: rostopic list | grep -iE 'depth|camera_info' -->
+  <!-- Option A: raw IR-frame depth (smallest; cloud in camera_depth_optical_frame) -->
+  <arg name="depth_image" default="/camera/depth/image_rect_raw" />
+  <arg name="depth_info"  default="/camera/depth/camera_info" />
+  <!-- Option B: aligned-to-color depth (reproduces /camera/depth/color/points exactly)
+  <arg name="depth_image" default="/camera/aligned_depth_to_color/image_raw" />
+  <arg name="depth_info"  default="/camera/aligned_depth_to_color/camera_info" /> -->
+
+  <!-- ================= RECORDER ================= -->
+  <node pkg="rosbag" type="record" name="ego_recorder" output="screen"
+    args="record
+      --output-prefix=$(arg bag_path)$(arg bag_prefix)
+      --lz4
+      --buffsize=1024
+
+      $(arg depth_image)
+      $(arg depth_info)
+
+      /mavros/local_position/odom
+      /mavros/local_position/pose
+      /mavros/state
+      /mavros/setpoint_raw/local
+      /mavros/setpoint_position/local
+      /tf
+      /tf_static
+
+      /move_base_simple/goal
+
+      /drone_$(arg drone_id)_planning/bspline
+      /drone_$(arg drone_id)_planning/data_display
+      /drone_$(arg drone_id)_planning/fsm_state
+      /drone_$(arg drone_id)_planning/pos_cmd
+
+      /drone_$(arg drone_id)_ego_planner_node/grid_map/occupancy_inflate
+      /drone_$(arg drone_id)_ego_planner_node/goal_point
+      /drone_$(arg drone_id)_ego_planner_node/global_list
+      /drone_$(arg drone_id)_ego_planner_node/init_list
+      /drone_$(arg drone_id)_ego_planner_node/optimal_list
+      /drone_$(arg drone_id)_ego_planner_node/a_star_list
+
+      /rosout_agg
+    " />  
+</launch>
