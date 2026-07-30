@@ -114,7 +114,7 @@
 
     <!-- Pointcloud Filter -->
     <param name="grid_map/pointcloud_maxdist" value="10.0"/>
-    <param name="grid_map/pointcloud_mindist" value="1.0"/>
+    <param name="grid_map/pointcloud_mindist" value="1.5"/>
 
     <!-- local fusion -->
     <param name="grid_map/p_hit" value="0.65"/>

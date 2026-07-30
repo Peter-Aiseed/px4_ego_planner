@@ -14,10 +14,10 @@
 
     <arg name="depth_width"                value="424"/>
     <arg name="depth_height"               value="240"/>
-    <arg name="depth_fps"                  value="30"/>
+    <arg name="depth_fps"                  value="15"/>
     <arg name="infra_width"                value="424"/>
     <arg name="infra_height"               value="240"/>
-    <arg name="infra_fps"                  value="30"/>
+    <arg name="infra_fps"                  value="15"/>
 
     <arg name="enable_accel"               value="false"/>
     <arg name="enable_gyro"                value="false"/>
@@ -25,7 +25,7 @@
     <arg name="filters"                    value="decimation"/>
   </include>
 
-    <param name="/camera/decimation/filter_magnitude" type="int" value="2"/>
+  <param name="/camera/decimation/filter_magnitude" type="int" value="2"/>
 
   <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="cloud_to_scan">
 		<remap from="cloud_in" to="/camera/depth/color/points"/>
@@ -41,5 +41,16 @@
 		<param name="range_max" value="9.8"/>
 		<param name="use_inf" value="true"/>
 	</node>
+
+  <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen" />
+  <node pkg="nodelet" type="nodelet" name="passthrough" args="load pcl/PassThrough pcl_manager" output="screen">
+    <remap from="~input" to="/camera/depth/color/points" />
+    <remap from="~output" to="/pointcloud/realsense/odom" />
+    <param name="output_frame" value="odom" />
+    <param name="filter_field_name" value="z" />
+    <param name="filter_limit_min" value="-100.0" />
+    <param name="filter_limit_max" value="100.0" />
+    <param name="filter_limit_negative" value="false" />
+  </node>
 
 </launch>

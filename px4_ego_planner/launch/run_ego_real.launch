@@ -9,7 +9,7 @@
 	<arg name="cy" value="120.0"/>
 	<arg name="fx" value="160.0"/>
 	<arg name="fy" value="160.0"/>
-	<arg name="cloud_topic" default="/camera/depth/color/points"/>
+	<arg name="cloud_topic" default="/pointcloud/realsense/odom"/>
 	<arg name="depth_topic" default="/dummy/image_raw"/>
 	<arg name="camera_pose" default="/dummy/pose"/>
 	<arg name="odom_topic" default="/mavros/local_position/odom" />
