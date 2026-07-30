@@ -1,6 +1,6 @@
 <launch>
   <!-- ================= ARGS ================= -->
-  <arg name="bag_path"   default="$(find px4_ego_planner)/rosbag/" />
+  <arg name="bag_path"   default="/ws_ego/src/px4_ego_planner/rosbag/" />
   <arg name="bag_prefix" default="ego_debug" />
   <arg name="drone_id"   default="0" />
 

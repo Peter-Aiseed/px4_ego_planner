@@ -870,7 +870,6 @@ void GridMap::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &img)
 
 void GridMap::publishMap()
 {
-
   if (map_pub_.getNumSubscribers() <= 0)
     return;
 
