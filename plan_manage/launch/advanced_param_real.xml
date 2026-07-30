@@ -52,6 +52,8 @@
     <remap from="~planning/broadcast_bspline_from_planner" to="/broadcast_bspline"/>
     <remap from="~planning/broadcast_bspline_to_planner" to="/broadcast_bspline"/>
 
+    <remap from="~planning/fsm_state" to="/drone_$(arg drone_id)_planning/fsm_state"/>
+
     <remap from="~grid_map/odom" to="$(arg odometry_topic)"/>
     <remap from="~grid_map/cloud" to="$(arg cloud_topic)"/>
     <remap from="~grid_map/pose" to ="$(arg camera_pose_topic)"/>

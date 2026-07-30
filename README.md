@@ -62,8 +62,9 @@ roscore
 
 ```bash
 px4_ego_planner/scripts/run_system.sh
+px4_ego_planner/scripts/record.sh
 ```
-    
+
 # QGroundControl (QGC)
 QGroundControl is used as the main control interface for the system.
 

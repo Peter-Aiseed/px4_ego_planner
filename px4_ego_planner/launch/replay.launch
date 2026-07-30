@@ -1,0 +1,64 @@
+<launch>
+  <arg name="bag_file" />
+  <arg name="rate"      default="1.0" />
+  <arg name="rviz_cfg"  default="$(find ego_planner)/rviz/debug.rviz" />
+
+  <!-- Active replay: re-run the planner against the bag inputs -->
+  <arg name="active"    default="false" />
+
+  <!-- Must match what record.launch captured (Option A raw IR depth here) -->
+  <arg name="depth_image" default="/camera/depth/image_rect_raw" />
+  <arg name="depth_info"  default="/camera/depth/camera_info" />
+  <arg name="cloud_topic" default="/camera/depth/color/points" />
+  <arg name="odom_topic"  default="/mavros/local_position/odom" />
+
+  <!-- Everything runs off bag time -->
+  <param name="/use_sim_time" value="true" />
+
+  <!-- ================= PLAYER ================= -->
+  <!-- PASSIVE: play EVERYTHING, run no planner. You watch the recorded result. -->
+  <node unless="$(arg active)" pkg="rosbag" type="play" name="player" output="screen"
+    args="$(arg bag_file)
+      --clock --rate=$(arg rate) --pause --queue=100" />
+
+  <!-- ACTIVE: play ONLY planner inputs, then run the planner fresh.
+       --topics must be LAST (it swallows all args after it). -->
+  <node if="$(arg active)" pkg="rosbag" type="play" name="player" output="screen"
+    args="$(arg bag_file)
+      --clock --rate=$(arg rate) --pause --queue=100
+      --topics
+        /move_base_simple/goal
+        $(arg odom_topic)
+        /tf /tf_static
+        $(arg depth_image)
+        $(arg depth_info)" />
+
+  <!-- ================= VISUALIZATION / LOGS ================= -->
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_cfg)" />
+  <node pkg="rqt_console" type="rqt_console" name="console" />
+
+  <!-- ================= DEPTH -> CLOUD ================= -->
+  <!-- Required in ACTIVE mode (the re-run planner subscribes to cloud_topic).
+       In PASSIVE mode it's optional but harmless: lets you overlay the raw
+       cloud in RViz. Reconstructs into the depth image's frame
+       (camera_depth_optical_frame for Option A). -->
+  <node pkg="nodelet" type="nodelet" name="depth_nodelet_manager"
+        args="manager" output="screen"/>
+  <node pkg="nodelet" type="nodelet" name="depth_to_xyz"
+        args="load depth_image_proc/point_cloud_xyz depth_nodelet_manager"
+        output="screen">
+    <remap from="image_rect"  to="$(arg depth_image)"/>
+    <remap from="camera_info" to="$(arg depth_info)"/>
+    <remap from="points"      to="$(arg cloud_topic)"/>
+  </node>
+
+  <!-- ================= ACTIVE: re-run planner ================= -->
+  <group if="$(arg active)">
+    <include file="$(find ego_planner)/launch/run_ego_real.launch">
+      <!-- run_ego_real.launch already defaults cloud_topic + odom_topic to
+           exactly these, so no override needed. Add param overrides here
+           if you want to test different planner settings on replay, e.g.:
+           <arg name="max_vel" value="1.5"/> -->
+    </include>
+  </group>
+</launch>
