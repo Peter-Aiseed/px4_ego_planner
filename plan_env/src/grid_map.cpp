@@ -56,6 +56,9 @@ void GridMap::initMap(ros::NodeHandle &nh)
 
   node_.param("grid_map/odom_depth_timeout", mp_.odom_depth_timeout_, 1.0);
 
+  node_.param("grid_map/recenter_margin", mp_.recenter_margin_, 15.0);
+  node_.param("grid_map/roll_z", mp_.roll_z_, true);
+
   if( mp_.virtual_ceil_height_ - mp_.ground_height_ > z_size)
   {
     mp_.virtual_ceil_height_ = mp_.ground_height_ + z_size;
@@ -775,6 +778,9 @@ void GridMap::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &img)
   if (isnan(md_.camera_pos_(0)) || isnan(md_.camera_pos_(1)) || isnan(md_.camera_pos_(2)))
     return;
 
+  /* NEW: keep the fixed buffer centered on the drone */
+  checkAndRecenterMap(md_.camera_pos_);
+
   this->resetBuffer(md_.camera_pos_ - mp_.local_update_range_,
                     md_.camera_pos_ + mp_.local_update_range_);
 
@@ -1028,4 +1034,61 @@ void GridMap::depthOdomCallback(const sensor_msgs::ImageConstPtr &img,
 
   md_.occ_need_update_ = true;
   md_.flag_use_depth_fusion = true;
+}
+
+bool GridMap::checkAndRecenterMap(const Eigen::Vector3d &drone_pos)
+{
+  // The live update window is drone_pos +/- local_update_range_.
+  // It must always fit inside the allocated box. Trigger a recenter when the
+  // drone gets within (local_update_range_ + margin) of ANY boundary.
+  Eigen::Vector3d trig = mp_.local_update_range_ +
+      Eigen::Vector3d(mp_.recenter_margin_, mp_.recenter_margin_, mp_.recenter_margin_);
+
+  bool need = false;
+  int axes = mp_.roll_z_ ? 3 : 2;   // only x,y unless roll_z_
+  for (int i = 0; i < axes; ++i)
+  {
+    if (drone_pos(i) - mp_.map_min_boundary_(i) < trig(i) ||
+        mp_.map_max_boundary_(i) - drone_pos(i) < trig(i))
+    {
+      need = true;
+      break;
+    }
+  }
+  if (!need) return false;
+
+  // New origin centers the box on the drone. Snap to a resolution multiple so
+  // voxel centers stay grid-aligned (avoids sub-voxel drift across recenters).
+  Eigen::Vector3d new_origin;
+  for (int i = 0; i < 3; ++i)
+  {
+    double c = drone_pos(i) - mp_.map_size_(i) / 2.0;
+    new_origin(i) = floor(c * mp_.resolution_inv_) * mp_.resolution_;
+  }
+
+  // Keep the vertical floor pinned to ground unless explicitly rolling z.
+  if (!mp_.roll_z_)
+    new_origin(2) = mp_.ground_height_;
+
+  mp_.map_origin_       = new_origin;
+  mp_.map_min_boundary_ = mp_.map_origin_;
+  mp_.map_max_boundary_ = mp_.map_origin_ + mp_.map_size_;
+
+  // Poor-man's version: discard the whole map. Cheap on the cloud path since
+  // there is no persistent log-odds history to lose.
+  std::fill(md_.occupancy_buffer_.begin(), md_.occupancy_buffer_.end(),
+            mp_.clamp_min_log_ - mp_.unknown_flag_);
+  std::fill(md_.occupancy_buffer_inflate_.begin(),
+            md_.occupancy_buffer_inflate_.end(), 0);
+
+  // If you ALSO use the depth path, reset its per-frame scratch buffers too:
+  std::fill(md_.count_hit_.begin(), md_.count_hit_.end(), 0);
+  std::fill(md_.count_hit_and_miss_.begin(), md_.count_hit_and_miss_.end(), 0);
+  std::fill(md_.flag_rayend_.begin(), md_.flag_rayend_.end(), -1);
+  std::fill(md_.flag_traverse_.begin(), md_.flag_traverse_.end(), -1);
+
+  ROS_WARN("[grid_map] recentered on (%.2f, %.2f, %.2f), origin now (%.2f, %.2f, %.2f)",
+           drone_pos(0), drone_pos(1), drone_pos(2),
+           new_origin(0), new_origin(1), new_origin(2));
+  return true;
 }

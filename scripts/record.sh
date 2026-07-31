@@ -5,4 +5,4 @@ mkdir -p "$DIR"
 rosparam dump "$DIR/ego_debug_$STAMP.params.yaml"                       # planner must already be running
 cp "$(rospack find px4_ego_planner)/launch/run_ego_real.launch" \
    "$DIR/ego_debug_$STAMP.launch"
-roslaunch px4_ego_planner record.launch bag_prefix:="ego_debug_$STAMP"
+roslaunch px4_ego_planner record.launch bag_prefix:="ego_debug"

@@ -216,6 +216,9 @@ private:
   int setCacheOccupancy(Eigen::Vector3d pos, int occ);
   Eigen::Vector3d closetPointInMap(const Eigen::Vector3d& pt, const Eigen::Vector3d& camera_pt);
 
+  // re-center the fixed buffer on the drone (poor-man's rolling map)
+  bool checkAndRecenterMap(const Eigen::Vector3d &drone_pos);
+
   // typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image,
   // nav_msgs::Odometry> SyncPolicyImageOdom; typedef
   // message_filters::sync_policies::ExactTime<sensor_msgs::Image,
@@ -242,6 +245,9 @@ private:
   uniform_real_distribution<double> rand_noise_;
   normal_distribution<double> rand_noise2_;
   default_random_engine eng_;
+
+  double recenter_margin_;   // extra buffer beyond local_update_range_ before recenter
+  bool   roll_z_;            // true = center z on drone; false = keep floor at ground_height_
 };
 
 /* ============================== definition of inline function
