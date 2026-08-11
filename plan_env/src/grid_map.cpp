@@ -87,8 +87,14 @@ void GridMap::initMap(ros::NodeHandle &nh)
   // initialize data buffers
 
   // Set local window size
+  // for (int i = 0; i < 3; ++i) {
+  //   mp_.local_map_size_id_(i) = std::ceil(2.0 * (mp_.local_update_range_(i) + mp_.obstacles_inflation_) * mp_.resolution_inv_) + 2;
+  // }
   for (int i = 0; i < 3; ++i) {
-    mp_.local_map_size_id_(i) = std::ceil(2.0 * (mp_.local_update_range_(i) + mp_.obstacles_inflation_) * mp_.resolution_inv_) + 2;
+    mp_.local_map_size_id_(i) =
+      std::ceil(2.0 * (mp_.local_update_range_(i) + mp_.obstacles_inflation_) * mp_.resolution_inv_)
+      + 2 * (mp_.local_map_margin_ + 5)   // cover clearAndInflateLocalMap's local_map_margin + vec_margin(5)
+      + 2;
   }
   mp_.current_center_id_ = Eigen::Vector3i(0, 0, 0);
 
@@ -766,6 +772,36 @@ void GridMap::odomCallback(const nav_msgs::OdometryConstPtr &odom)
   md_.has_odom_ = true;
 }
 
+void GridMap::projectCloudPoints(const pcl::PointCloud<pcl::PointXYZ> &cloud)
+{
+  md_.proj_points_cnt = 0;
+  if ((int)md_.proj_points_.size() < (int)cloud.points.size())
+    md_.proj_points_.resize(cloud.points.size());
+
+  const Eigen::Vector3d &cam = md_.camera_pos_;
+
+  for (size_t i = 0; i < cloud.points.size(); ++i)
+  {
+    const pcl::PointXYZ &p = cloud.points[i];
+    if (!std::isfinite(p.x) || !std::isfinite(p.y) || !std::isfinite(p.z)) continue;
+
+    Eigen::Vector3d pw(p.x, p.y, p.z);
+    Eigen::Vector3d devi = pw - cam;
+    double d = devi.norm();
+
+    if (d < mp_.pointcloud_mindist_ || d > mp_.pointcloud_maxdist_) continue;
+
+    // Keep only endpoints inside the rolling window. Otherwise raycastProcess
+    // clamps to the *global* box via closetPointInMap, and that far point
+    // aliases through the ring-buffer modulo address onto an in-window slot.
+    if (fabs(devi(0)) >= mp_.local_update_range_(0) ||
+        fabs(devi(1)) >= mp_.local_update_range_(1) ||
+        fabs(devi(2)) >= mp_.local_update_range_(2)) continue;
+
+    md_.proj_points_[md_.proj_points_cnt++] = pw;
+  }
+}
+
 void GridMap::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &img)
 {
 
@@ -786,62 +822,11 @@ void GridMap::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &img)
   if (isnan(md_.camera_pos_(0)) || isnan(md_.camera_pos_(1)) || isnan(md_.camera_pos_(2)))
     return;
 
-  this->resetBuffer(md_.camera_pos_ - mp_.local_update_range_,
-                    md_.camera_pos_ + mp_.local_update_range_);
-
-  pcl::PointXYZ pt;
-  Eigen::Vector3d p3d, p3d_inf;
-
-  int inf_step = ceil(mp_.obstacles_inflation_ / mp_.resolution_);
-  int inf_step_z = 1;
-
-  for (size_t i = 0; i < latest_cloud.points.size(); ++i)
-  {
-    pt = latest_cloud.points[i];
-    p3d(0) = pt.x, p3d(1) = pt.y, p3d(2) = pt.z;
-
-    /* point inside update range */
-    Eigen::Vector3d devi = p3d - md_.camera_pos_;
-
-    double d = devi.norm();
-    /* point inside pointcloud range */
-    if (d < mp_.pointcloud_mindist_ || d > mp_.pointcloud_maxdist_) continue;
-
-    Eigen::Vector3i inf_pt;
-
-    if (fabs(devi(0)) < mp_.local_update_range_(0) && fabs(devi(1)) < mp_.local_update_range_(1) && fabs(devi(2)) < mp_.local_update_range_(2))
-    {
-      /* inflate the point */
-      for (int x = -inf_step; x <= inf_step; ++x)
-        for (int y = -inf_step; y <= inf_step; ++y)
-          for (int z = -inf_step_z; z <= inf_step_z; ++z)
-          {
-
-            p3d_inf(0) = pt.x + x * mp_.resolution_;
-            p3d_inf(1) = pt.y + y * mp_.resolution_;
-            p3d_inf(2) = pt.z + z * mp_.resolution_;
-
-            posToIndex(p3d_inf, inf_pt);
-
-            if (!isInMap(inf_pt)) {
-              // UNCOMMENT THIS TO DEBUG:
-              // ROS_WARN_THROTTLE(1.0, "Point rejected by isInMap! inf_pt: %d %d %d, center: %d %d %d", 
-              //                   inf_pt(0), inf_pt(1), inf_pt(2), 
-              //                   mp_.current_center_id_(0), mp_.current_center_id_(1), mp_.current_center_id_(2));
-              continue;
-            }
-
-            int idx_inf = toAddress(inf_pt);
-            md_.occupancy_buffer_[idx_inf] = mp_.clamp_max_log_; 
-            md_.occupancy_buffer_inflate_[idx_inf] = 1;
-          }
-    }
-  }
-  Eigen::Vector3d local_min_pos = md_.camera_pos_ - mp_.local_update_range_;
-  Eigen::Vector3d local_max_pos = md_.camera_pos_ + mp_.local_update_range_;
-
-  posToIndex(local_min_pos, md_.local_bound_min_);
-  posToIndex(local_max_pos, md_.local_bound_max_);
+  // NO resetBuffer here anymore.
+  projectCloudPoints(latest_cloud);   // cloud -> ray endpoints
+  raycastProcess();                   // endpoint = HIT, traversed cells = MISS (log-odds)
+  if (md_.local_updated_) clearAndInflateLocalMap();
+  md_.local_updated_ = false;
 }
 
 void GridMap::publishMap()

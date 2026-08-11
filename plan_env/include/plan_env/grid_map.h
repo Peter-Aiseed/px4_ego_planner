@@ -192,6 +192,8 @@ public:
   int getVoxelNum();
   bool getOdomDepthTimeout() { return md_.flag_depth_odom_timeout_; }
 
+  void projectCloudPoints(const pcl::PointCloud<pcl::PointXYZ>& cloud);
+
   typedef std::shared_ptr<GridMap> Ptr;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
