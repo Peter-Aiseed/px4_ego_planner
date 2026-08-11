@@ -1,0 +1,3 @@
+# Ignore the mavp2p binary in the tools folder
+tools/mavp2p
+px4_ego_planner/models/helen_terrain

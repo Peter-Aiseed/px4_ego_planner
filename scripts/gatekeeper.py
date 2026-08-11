@@ -88,6 +88,9 @@ class MasterGatekeeper:
         self.home_lat = None        # Global Position Latitude
         self.home_lon = None        # Global Position Longitude
         self.home_alt = None        # Global Position Relative Altitude in meters
+        self.home_x = None          # Local Position X in meters
+        self.home_y = None          # Local Position Y in meters
+        self.home_z = None          # Local Position Z in meters
         self.current_mode = "Initial"
         self.planner_goal = None
         self.change_to_hold = False
@@ -126,14 +129,14 @@ class MasterGatekeeper:
     
     def get_local_coords(self, target_lat, target_lon, target_alt):
         """Converts GPS to Local Meters"""
-        if self.home_lat is None:
+        if self.home_lat is None or self.home_x is None:
             return None
         
         # Y = North, X = East
         y = (target_lat - self.home_lat) * 111320.0
         x = (target_lon - self.home_lon) * 111320.0 * math.cos(math.radians(self.home_lat))
         z = target_alt - self.home_alt
-        return x, y, z
+        return x + self.home_y, y + self.home_x, z - self.home_z
 
     def get_px4_mode_names(self, custom_mode):
         # Bit-shift to get the bytes
@@ -507,6 +510,8 @@ class MasterGatekeeper:
                     self.home_lat = msg_p.latitude / 1e7
                     self.home_lon = msg_p.longitude / 1e7
                     self.home_alt = msg_p.altitude / 1e3
+                    self.home_x, self.home_y, self.home_z = msg_p.x, msg_p.y, msg_p.z
+                    # rospy.loginfo(f"{CYAN}Home Position Set: Local X {self.home_x:.2f}m, Y {self.home_y:.2f}m, Z {self.home_z:.2f}m{ENDC}")
                 
                 # -------------------------------------------------------------------
                 #                         LOCAL_POSITION_NED                            
@@ -517,9 +522,9 @@ class MasterGatekeeper:
                 # -------------------------------------------------------------------
                 #                             COMMAND_ACK                            
                 # -------------------------------------------------------------------
-                elif p_type == 'COMMAND_ACK':
+                # elif p_type == 'COMMAND_ACK':
                     # Intercept ACKs from the px4 and prevent them from reaching QGC
-                    rospy.loginfo(f"{YELLOW}{msg_p}{ENDC}")
+                    # rospy.loginfo(f"{YELLOW}{msg_p}{ENDC}")
 
                 # -------------------------------------------------------------------
                 #                              MISSION                            
