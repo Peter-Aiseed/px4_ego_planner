@@ -261,6 +261,7 @@ bool AStar::AstarSearch(const double step_size, Vector3d start_pt, Vector3d end_
                         neighborPtr->cameFrom = current;
                         neighborPtr->gScore = tentative_gScore;
                         neighborPtr->fScore = tentative_gScore + getHeu(neighborPtr, endPtr);
+                        openSet_.push(neighborPtr); //put neighbor in open set and record it.
                     }
                 }
         ros::Time time_2 = ros::Time::now();
