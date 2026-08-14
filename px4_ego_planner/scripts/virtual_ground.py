@@ -13,10 +13,10 @@ class VirtualGroundGenerator:
         rospy.init_node('virtual_ground_generator')
 
         # --- Parameters ---
-        # Grid size in meters (e.g., 8x8 meter square)
-        self.grid_size = rospy.get_param('~grid_size', 8.0) 
-        # Resolution (0.5m means a point every 50cm)
-        self.res = rospy.get_param('~resolution', 0.5)
+        # Grid size in meters (e.g., 2x2 meter square)
+        self.grid_size = rospy.get_param('~grid_size', 2.0) 
+        # Resolution (0.25m means a point every 25cm)
+        self.res = rospy.get_param('~resolution', 0.25)
         # The frame we are publishing in (FLU stable frame)
         self.target_frame = "base_link_stable"
 

@@ -1,10 +1,5 @@
 <launch>
-  <arg name="map_size_x_"/>
-  <arg name="map_size_y_"/>
-  <arg name="map_size_z_"/>
-
   <arg name="odometry_topic"/>
-  <arg name="camera_pose_topic"/>
   <arg name="depth_topic"/>
   <arg name="cloud_topic"/>
 
@@ -56,7 +51,6 @@
 
     <remap from="~grid_map/odom" to="$(arg odometry_topic)"/>
     <remap from="~grid_map/cloud" to="$(arg cloud_topic)"/>
-    <remap from="~grid_map/pose" to ="$(arg camera_pose_topic)"/>
     <remap from="~grid_map/depth" to="$(arg depth_topic)"/>
 
     <!-- planning fsm -->
@@ -88,50 +82,34 @@
     <param name="fsm/waypoint4_y" value="$(arg point4_y)" type="double"/>
     <param name="fsm/waypoint4_z" value="$(arg point4_z)" type="double"/>
 
+    <!-- Grid Map Core Parameters -->
     <param name="grid_map/resolution" value="0.25" />
-    <param name="grid_map/map_size_x" value="$(arg map_size_x_)" />
-    <param name="grid_map/map_size_y" value="$(arg map_size_y_)" />
-    <param name="grid_map/map_size_z" value="$(arg map_size_z_)" />
-    <param name="grid_map/local_update_range_x" value="10.0" />
-    <param name="grid_map/local_update_range_y" value="10.0" />
+    <param name="grid_map/local_update_range_x" value="11.0" />
+    <param name="grid_map/local_update_range_y" value="11.0" />
     <param name="grid_map/local_update_range_z" value="5.0" />
-    <param name="grid_map/obstacles_inflation" value="0.5" />
-    <param name="grid_map/local_map_margin" value="10"/>
-    <param name="grid_map/ground_height" value="-0.01"/>
+    <param name="grid_map/obstacles_inflation" value="1.0" />
+    <param name="grid_map/frame_id" value="map"/>
 
-    <!-- camera parameter -->
+    <!-- Depth Camera Intrinsics (Clearing) -->
     <param name="grid_map/cx" value="$(arg cx)"/>
     <param name="grid_map/cy" value="$(arg cy)"/>
     <param name="grid_map/fx" value="$(arg fx)"/>
     <param name="grid_map/fy" value="$(arg fy)"/>
-
-    <!-- depth filter -->
-    <param name="grid_map/use_depth_filter" value="false"/>
-    <param name="grid_map/depth_filter_tolerance" value="0.15"/>
-    <param name="grid_map/depth_filter_maxdist" value="5.0"/>
-    <param name="grid_map/depth_filter_mindist" value="0.2"/>
-    <param name="grid_map/depth_filter_margin" value="2"/>
+    <param name="grid_map/depth_filter_maxdist" value="10.0"/>
+    <param name="grid_map/depth_filter_mindist" value="1.5"/>
     <param name="grid_map/k_depth_scaling_factor" value="1000.0"/>
-    <param name="grid_map/skip_pixel" value="4"/>
+    <param name="grid_map/skip_pixel" value="2"/>
 
-    <!-- Pointcloud Filter -->
-    <param name="grid_map/pointcloud_maxdist" value="10.0"/>
-    <param name="grid_map/pointcloud_mindist" value="1.5"/>
-
-    <!-- local fusion -->
+    <!-- Log-Odds Probability Setup -->
     <param name="grid_map/p_hit" value="0.65"/>
     <param name="grid_map/p_miss" value="0.35"/>
     <param name="grid_map/p_min" value="0.12"/>
     <param name="grid_map/p_max" value="0.90"/>
     <param name="grid_map/p_occ" value="0.80"/>
-    <param name="grid_map/min_ray_length" value="0.5"/>
-    <param name="grid_map/max_ray_length" value="10.0"/>
 
-    <param name="grid_map/virtual_ceil_height" value="29.5"/>
-    <param name="grid_map/visualization_truncate_height" value="29.0"/>
-    <param name="grid_map/show_occ_time" value="false"/>
-    <param name="grid_map/pose_type" value="2"/>
-    <param name="grid_map/frame_id" value="map"/>
+    <!-- Pointcloud Filter -->
+    <param name="grid_map/pointcloud_maxdist" value="10.0"/>
+    <param name="grid_map/pointcloud_mindist" value="1.5"/>
 
     <!-- planner manager -->
     <param name="manager/max_vel" value="$(arg max_vel)" type="double"/>
