@@ -42,7 +42,7 @@ echo "[2/2] Starting Ego-Planner Simulation..."
 echo "-------------------------------------------"
 
 # Launch your simulation (Make sure your workspace is sourced!)
-roslaunch px4_ego_planner run_sim.launch
+roslaunch px4_ego_planner run_real.launch
 SIM_PID=$!
 
 # 6. Wait for the simulation to end (or Ctrl+C)

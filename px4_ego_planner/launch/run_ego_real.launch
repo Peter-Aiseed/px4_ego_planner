@@ -2,10 +2,10 @@
 	<arg name="max_vel" value="2.0" />
 	<arg name="max_acc" value="2.0" />
 	<arg name="planning_horizon" value="15.0" />
-	<arg name="cx" value="60.235267639160156"/>
-	<arg name="cy" value="60.72991180419922"/>
-	<arg name="fx" value="60.235267639160156"/>
-	<arg name="fy" value="32.493194580078125"/>
+	<arg name="cx" value="48.18821334838867"/>
+	<arg name="cy" value="48.18821334838867"/>
+	<arg name="fx" value="48.58393096923828"/>
+	<arg name="fy" value="25.994556427001953"/>
 	<arg name="cloud_topic" default="/pointcloud/realsense/odom"/>
 	<arg name="depth_topic" default="/camera/depth/image_rect_raw"/>
 	<arg name="odom_topic" default="/mavros/local_position/odom" />

@@ -1,4 +1,6 @@
 #include "plan_env/grid_map.h"
+#include <chrono>
+#include <omp.h>
 
 void GridMap::initMap(ros::NodeHandle &nh)
 {
@@ -81,9 +83,6 @@ void GridMap::initMap(ros::NodeHandle &nh)
   vis_timer_ = node_.createTimer(ros::Duration(0.10), &GridMap::visCallback, this);
 
   md_.has_odom_ = false;
-  md_.has_cloud_ = false;
-  md_.has_depth_ = false;
-  md_.local_updated_ = false;
 }
 
 void GridMap::odomCallback(const nav_msgs::OdometryConstPtr &odom)
@@ -139,9 +138,6 @@ void GridMap::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &msg)
       md_.cloud_points_.push_back(pt);
     }
   }
-
-  md_.has_cloud_ = !md_.cloud_points_.empty();
-  md_.last_occ_update_time_ = ros::Time::now();
 }
 
 void GridMap::depthCallback(const sensor_msgs::ImageConstPtr &img)
@@ -151,17 +147,11 @@ void GridMap::depthCallback(const sensor_msgs::ImageConstPtr &img)
     (cv_ptr->image).convertTo(cv_ptr->image, CV_16UC1, mp_.k_depth_scaling_factor_);
   }
   cv_ptr->image.copyTo(md_.depth_image_);
-  md_.has_depth_ = true;
-  md_.last_occ_update_time_ = ros::Time::now();
 }
 
-int GridMap::setCacheOccupancy(Eigen::Vector3d pos, int occ)
+void GridMap::setCacheOccupancy(Eigen::Vector3i id, bool occ)
 {
-  if (occ != 1 && occ != 0) return -1;
-
-  Eigen::Vector3i id;
-  posToIndex(pos, id);
-  if (!isInMap(id)) return -1;
+  if (!isInMap(id)) return;
 
   int idx_ctns = toBufferAddress(id);
   md_.count_hit_and_miss_[idx_ctns] += 1;
@@ -169,26 +159,31 @@ int GridMap::setCacheOccupancy(Eigen::Vector3d pos, int occ)
     md_.cache_voxel_.push(id);
   }
 
-  if (occ == 1) md_.count_hit_[idx_ctns] += 1;
+  if (occ) md_.count_hit_[idx_ctns] += 1;
+}
 
-  return idx_ctns;
+void GridMap::setCacheOccupancy(Eigen::Vector3d pos, bool occ)
+{
+  Eigen::Vector3i id;
+  posToIndex(pos, id);
+  setCacheOccupancy(id, occ);
 }
 
 void GridMap::processPointCloudInput()
 {
-  if (!md_.has_cloud_ || md_.cloud_points_.empty()) return;
+  if (md_.cloud_points_.empty()) return;
 
   for (const auto& pt : md_.cloud_points_.points) {
     Eigen::Vector3d pt_w(pt.x, pt.y, pt.z);
     if (isInMap(pt_w)) {
-      setCacheOccupancy(pt_w, 1);  // Mark as occupied hit
+      setCacheOccupancy(pt_w, true);
     }
   }
 }
 
 void GridMap::processDepthClearing()
 {
-  if (!md_.has_depth_ || md_.depth_image_.empty()) return;
+  if (md_.depth_image_.empty()) return;
 
   md_.raycast_num_ += 1;
   uint16_t *row_ptr;
@@ -198,7 +193,6 @@ void GridMap::processDepthClearing()
   double depth;
 
   RayCaster raycaster;
-  Eigen::Vector3d half(0.5, 0.5, 0.5);
   Eigen::Vector3d ray_pt, pt_w, pt_cam;
 
   const double inv_factor = 1.0 / mp_.k_depth_scaling_factor_;
@@ -209,10 +203,10 @@ void GridMap::processDepthClearing()
       depth = (*row_ptr) * inv_factor;
       row_ptr += skip_pix;
 
-      if (depth < mp_.depth_filter_mindist_) continue;
-
-      if (depth > mp_.depth_filter_maxdist_ || depth == 0) {
+      if (depth == 0 || depth > mp_.depth_filter_maxdist_) {
         depth = mp_.depth_filter_maxdist_;
+      } else if (depth < mp_.depth_filter_mindist_) {
+        continue;
       }
 
       pt_cam(0) = (u - mp_.cx_) * depth / mp_.fx_;
@@ -225,14 +219,16 @@ void GridMap::processDepthClearing()
       raycaster.setInput(md_.camera_pos_ / mp_.resolution_, pt_w / mp_.resolution_);
 
       while (raycaster.step(ray_pt)) {
-        Eigen::Vector3d tmp = (ray_pt + half) * mp_.resolution_;
-        if (!isInMap(tmp)) break;
+        
+        Eigen::Vector3i ray_id = ray_pt.cast<int>();
+        if (!isInMap(ray_id)) break;
 
-        int vox_idx = setCacheOccupancy(tmp, 0);  // Mark as free miss
-        if (vox_idx != -1) {
-          if (md_.flag_traverse_[vox_idx] == md_.raycast_num_) break;
-          md_.flag_traverse_[vox_idx] = md_.raycast_num_;
-        }
+        int vox_idx = toBufferAddress(ray_id);
+
+        if (md_.flag_traverse_[vox_idx] == md_.raycast_num_) continue;
+        
+        md_.flag_traverse_[vox_idx] = md_.raycast_num_;
+        setCacheOccupancy(ray_id, false);
       }
     }
   }
@@ -262,7 +258,10 @@ void GridMap::applyCacheToBuffer()
 
 void GridMap::updateOccupancyCallback(const ros::TimerEvent &)
 {
-  if (!md_.has_odom_) return;
+  if (!md_.has_odom_) {
+    ROS_WARN_THROTTLE(1.0, "[grid_map] no odom received yet - skipping map update entirely");
+    return;
+  }
 
   /* Clear phase: depth-image raycasting misses go in and are flushed first,
      so free-space evidence is applied before any obstacle hits this cycle. */
@@ -282,8 +281,8 @@ void GridMap::updateOccupancyCallback(const ros::TimerEvent &)
   posToIndex(local_range_max, md_.local_bound_max_);
   posToIndex(local_range_min, md_.local_bound_min_);
 
-  clearAndInflateLocalMap();
-  md_.local_updated_ = true;
+  updateInflation();
+  md_.last_occ_update_time_ = ros::Time::now();
 }
 
 void GridMap::updateWindow(const Eigen::Vector3i& new_center_id) {
@@ -329,38 +328,153 @@ void GridMap::updateWindow(const Eigen::Vector3i& new_center_id) {
   mp_.current_center_id_ = new_center_id;
 }
 
-void GridMap::clearAndInflateLocalMap()
+void GridMap::updateInflation()
 {
-  Eigen::Vector3d local_range_min = md_.camera_pos_ - mp_.local_update_range_;
-  Eigen::Vector3d local_range_max = md_.camera_pos_ + mp_.local_update_range_;
+  int min_x = md_.local_bound_min_(0);
+  int min_y = md_.local_bound_min_(1);
+  int min_z = md_.local_bound_min_(2);
+  int max_x = md_.local_bound_max_(0);
+  int max_y = md_.local_bound_max_(1);
+  int max_z = md_.local_bound_max_(2);
 
-  posToIndex(local_range_max, md_.local_bound_max_);
-  posToIndex(local_range_min, md_.local_bound_min_);
+  int nx = max_x - min_x + 1;
+  int ny = max_y - min_y + 1;
+  int nz = max_z - min_z + 1;
+
+  size_t total = static_cast<size_t>(nx) * ny * nz;
+
+  if (md_.inflation_tmp1_.size() != total)
+    md_.inflation_tmp1_.resize(total, 0);
+
+  if (md_.inflation_tmp2_.size() != total)
+    md_.inflation_tmp2_.resize(total, 0);
 
   int inf_step = ceil(mp_.obstacles_inflation_ / mp_.resolution_);
-  vector<Eigen::Vector3i> inf_pts(pow(2 * inf_step + 1, 3));
 
-  // 2. Clear all inflated voxels in the local window
-  for (int x = md_.local_bound_min_(0); x <= md_.local_bound_max_(0); ++x)
-    for (int y = md_.local_bound_min_(1); y <= md_.local_bound_max_(1); ++y)
-      for (int z = md_.local_bound_min_(2); z <= md_.local_bound_max_(2); ++z) {
-        md_.occupancy_buffer_inflate_[toBufferAddress(Eigen::Vector3i(x, y, z))] = 0;
+  auto localIndex = [ny, nz](int x, int y, int z) -> size_t
+  {
+    return (static_cast<size_t>(x) * ny + y) * nz + z;
+  };
+
+  /* X pass */
+  #pragma omp parallel for collapse(2) schedule(static)
+  for (int y = 0; y < ny; ++y)
+    for (int z = 0; z < nz; ++z)
+    {
+      int count = 0;
+      int first_end = std::min(nx - 1, inf_step);
+
+      for (int x = 0; x <= first_end; ++x)
+      {
+        Eigen::Vector3i voxel(min_x + x, min_y + y, min_z + z);
+        int addr = toBufferAddress(voxel);
+
+        if (md_.occupancy_buffer_[addr] > mp_.min_occupancy_log_)
+          ++count;
       }
 
-  // 3. Re-inflate active obstacles
-  for (int x = md_.local_bound_min_(0); x <= md_.local_bound_max_(0); ++x)
-    for (int y = md_.local_bound_min_(1); y <= md_.local_bound_max_(1); ++y)
-      for (int z = md_.local_bound_min_(2); z <= md_.local_bound_max_(2); ++z) {
-        Eigen::Vector3i pt(x, y, z);
-        if (md_.occupancy_buffer_[toBufferAddress(pt)] > mp_.min_occupancy_log_) {
-          inflatePoint(pt, inf_step, inf_pts);
+      for (int x = 0; x < nx; ++x)
+      {
+        md_.inflation_tmp1_[localIndex(x, y, z)] = (count > 0) ? 1 : 0;
 
-          for (const auto& inf_pt : inf_pts) {
-            if (!isInMap(inf_pt)) continue;
-            md_.occupancy_buffer_inflate_[toBufferAddress(inf_pt)] = 1;
-          }
+        int add_x = x + inf_step + 1;
+
+        if (add_x < nx)
+        {
+          Eigen::Vector3i voxel(min_x + add_x, min_y + y, min_z + z);
+          int addr = toBufferAddress(voxel);
+
+          if (md_.occupancy_buffer_[addr] > mp_.min_occupancy_log_)
+            ++count;
+        }
+
+        int remove_x = x - inf_step;
+
+        if (remove_x >= 0)
+        {
+          Eigen::Vector3i voxel(min_x + remove_x, min_y + y, min_z + z);
+          int addr = toBufferAddress(voxel);
+
+          if (md_.occupancy_buffer_[addr] > mp_.min_occupancy_log_)
+            --count;
         }
       }
+    }
+
+  /* Y pass */
+  #pragma omp parallel for collapse(2) schedule(static)
+  for (int x = 0; x < nx; ++x)
+    for (int z = 0; z < nz; ++z)
+    {
+      int count = 0;
+      int first_end = std::min(ny - 1, inf_step);
+
+      for (int y = 0; y <= first_end; ++y)
+      {
+        if (md_.inflation_tmp1_[localIndex(x, y, z)])
+          ++count;
+      }
+
+      for (int y = 0; y < ny; ++y)
+      {
+        md_.inflation_tmp2_[localIndex(x, y, z)] = (count > 0) ? 1 : 0;
+
+        int add_y = y + inf_step + 1;
+
+        if (add_y < ny)
+        {
+          if (md_.inflation_tmp1_[localIndex(x, add_y, z)])
+            ++count;
+        }
+
+        int remove_y = y - inf_step;
+
+        if (remove_y >= 0)
+        {
+          if (md_.inflation_tmp1_[localIndex(x, remove_y, z)])
+            --count;
+        }
+      }
+    }
+
+  /* Z pass */
+  #pragma omp parallel for collapse(2) schedule(static)
+  for (int x = 0; x < nx; ++x)
+    for (int y = 0; y < ny; ++y)
+    {
+      int count = 0;
+      int first_end = std::min(nz - 1, inf_step);
+
+      for (int z = 0; z <= first_end; ++z)
+      {
+        if (md_.inflation_tmp2_[localIndex(x, y, z)])
+          ++count;
+      }
+
+      for (int z = 0; z < nz; ++z)
+      {
+        Eigen::Vector3i voxel(min_x + x, min_y + y, min_z + z);
+        int addr = toBufferAddress(voxel);
+
+        md_.occupancy_buffer_inflate_[addr] = (count > 0) ? 1 : 0;
+
+        int add_z = z + inf_step + 1;
+
+        if (add_z < nz)
+        {
+          if (md_.inflation_tmp2_[localIndex(x, y, add_z)])
+            ++count;
+        }
+
+        int remove_z = z - inf_step;
+
+        if (remove_z >= 0)
+        {
+          if (md_.inflation_tmp2_[localIndex(x, y, remove_z)])
+            --count;
+        }
+      }
+    }
 }
 
 void GridMap::publishMap()

@@ -76,9 +76,12 @@ struct MappingData {
   Eigen::Vector3i local_bound_min_, local_bound_max_;
 
   /* Status Flags */
-  bool has_odom_, has_cloud_, has_depth_;
-  bool local_updated_;
+  bool has_odom_;
   ros::Time last_occ_update_time_;
+
+  /* Update Inflation Temporary Voxel */
+  std::vector<char> inflation_tmp1_;
+  std::vector<char> inflation_tmp2_;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
@@ -137,11 +140,12 @@ private:
   void processPointCloudInput();
   void processDepthClearing();
   void applyCacheToBuffer();
-  void clearAndInflateLocalMap();
+  void updateInflation();
   void updateWindow(const Eigen::Vector3i& new_center_id);
 
   inline void inflatePoint(const Eigen::Vector3i& pt, int step, vector<Eigen::Vector3i>& pts);
-  int setCacheOccupancy(Eigen::Vector3d pos, int occ);
+  void setCacheOccupancy(Eigen::Vector3d pos, bool occ);
+  void setCacheOccupancy(Eigen::Vector3i id, bool occ);
 
   ros::NodeHandle node_;
   ros::Subscriber odom_sub_;

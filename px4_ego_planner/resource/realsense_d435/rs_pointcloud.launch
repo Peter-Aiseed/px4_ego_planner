@@ -12,20 +12,20 @@
     <arg name="pointcloud_texture_stream"  value="RS2_STREAM_INFRARED"/>
     <arg name="pointcloud_texture_index"   value="1"/>
 
-    <arg name="depth_width"                value="424"/>
-    <arg name="depth_height"               value="240"/>
-    <arg name="depth_fps"                  value="15"/>
-    <arg name="infra_width"                value="424"/>
-    <arg name="infra_height"               value="240"/>
-    <arg name="infra_fps"                  value="15"/>
+    <arg name="depth_width"                value="480"/>
+    <arg name="depth_height"               value="270"/>
+    <arg name="depth_fps"                  value="30"/>
+    <arg name="infra_width"                value="480"/>
+    <arg name="infra_height"               value="270"/>
+    <arg name="infra_fps"                  value="30"/>
 
     <arg name="enable_accel"               value="false"/>
     <arg name="enable_gyro"                value="false"/>
 
-    <arg name="filters"                    value="decimation"/>
+    <arg name="filters"                    value="decimation,spatial,temporal"/>
   </include>
 
-  <param name="/camera/decimation/filter_magnitude" type="int" value="2"/>
+  <param name="/camera/decimation/filter_magnitude" type="int" value="5"/>
 
   <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="cloud_to_scan">
 		<remap from="cloud_in" to="/camera/depth/color/points"/>
