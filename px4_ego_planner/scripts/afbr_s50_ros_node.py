@@ -314,7 +314,8 @@ def main():
 
     # Wide FoV Angular Grid Constants (8 Columns x 4 Rows)
     TOTAL_COLS, TOTAL_ROWS = 8, 4
-    H_FOV, V_FOV = math.radians(12.4), math.radians(5.4) # Update to match your exact variant model sheet
+    # H_FOV, V_FOV = math.radians(12.4), math.radians(5.4) # Update to match your exact variant model sheet
+    H_FOV, V_FOV = math.radians(2.0), math.radians(2.0)     # S50LV85D
     H_STEP, V_STEP = H_FOV / TOTAL_COLS, V_FOV / TOTAL_ROWS
 
     # 3. Connection and sensor setup
@@ -381,7 +382,8 @@ def main():
                             msg.radiation_type = Range.INFRARED
                             msg.field_of_view = H_FOV
                             msg.min_range = 0.05
-                            msg.max_range = 15.0
+                            # msg.max_range = 15.0
+                            msg.max_range = 30.0    # S50LV85D
                             # Extract singular range tracker reading safely
                             msg.range = data.get('range', 0.0)
                             pub.publish(msg)
