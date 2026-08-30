@@ -28,7 +28,7 @@ if [ $? != 0 ]; then
     # PANE 2 (Bottom): Exec into Docker and run Ego Planner
     tmux send-keys -t $SESSION:0.1 "docker exec -it noetic /bin/bash" C-m
     sleep 1
-    tmux send-keys -t $SESSION:0.1 "roslaunch px4_ego_planner run_real.launch" C-m
+    tmux send-keys -t $SESSION:0.1 " ./ws_ego/src/px4_ego_planner/scripts/run_system.sh" C-m
 
 
     # ==================== WINDOW 1: FULLSCREEN DEBUG ====================

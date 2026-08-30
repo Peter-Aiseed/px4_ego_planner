@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
+find_package(OpenMP REQUIRED)
 
 catkin_package(
  INCLUDE_DIRS include
@@ -57,3 +58,6 @@ add_executable(obj_generator
 target_link_libraries(obj_generator 
     ${catkin_LIBRARIES}
     )
+
+target_link_libraries(plan_env ${OpenMP_CXX_LIBRARIES})
+target_compile_options(plan_env PRIVATE ${OpenMP_CXX_FLAGS})

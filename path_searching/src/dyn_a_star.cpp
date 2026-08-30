@@ -125,6 +125,19 @@ bool AStar::AstarSearch(const double step_size, Vector3d start_pt, Vector3d end_
 
     step_size_ = step_size;
     inv_step_size_ = 1 / step_size;
+
+    // --- 1. Clamp End Goal into Active Rolling Map Window ---
+    if (!grid_map_->isInMap(end_pt)) {
+      Eigen::Vector3d dir = (end_pt - start_pt).normalized();
+      Eigen::Vector3d temp_pt = end_pt;
+      
+      // Step back toward start_pt until the point falls inside the local rolling window
+      while (!grid_map_->isInMap(temp_pt) && (temp_pt - start_pt).norm() > 0.5) {
+        temp_pt -= dir * 0.2; // Step back 20cm
+      }
+      end_pt = temp_pt;
+    }
+
     center_ = (start_pt + end_pt) / 2;
 
     Vector3i start_idx, end_idx;
@@ -137,8 +150,22 @@ bool AStar::AstarSearch(const double step_size, Vector3d start_pt, Vector3d end_
     // if ( start_pt(0) > -1 && start_pt(0) < 0 )
     //     cout << "start_pt=" << start_pt.transpose() << " end_pt=" << end_pt.transpose() << endl;
 
-    GridNodePtr startPtr = GridNodeMap_[start_idx(0)][start_idx(1)][start_idx(2)];
-    GridNodePtr endPtr = GridNodeMap_[end_idx(0)][end_idx(1)][end_idx(2)];
+    // --- 2. Ring Buffer Index Conversion for GridNodeMap Pool ---
+    int start_rx = (start_idx(0) % POOL_SIZE_(0) + POOL_SIZE_(0)) % POOL_SIZE_(0);
+    int start_ry = (start_idx(1) % POOL_SIZE_(1) + POOL_SIZE_(1)) % POOL_SIZE_(1);
+    int start_rz = (start_idx(2) % POOL_SIZE_(2) + POOL_SIZE_(2)) % POOL_SIZE_(2);
+
+    int end_rx = (end_idx(0) % POOL_SIZE_(0) + POOL_SIZE_(0)) % POOL_SIZE_(0);
+    int end_ry = (end_idx(1) % POOL_SIZE_(1) + POOL_SIZE_(1)) % POOL_SIZE_(1);
+    int end_rz = (end_idx(2) % POOL_SIZE_(2) + POOL_SIZE_(2)) % POOL_SIZE_(2);
+
+    // Retrieve nodes using ring-buffered pool addresses
+    GridNodePtr startPtr = GridNodeMap_[start_rx][start_ry][start_rz];
+    GridNodePtr endPtr   = GridNodeMap_[end_rx][end_ry][end_rz];
+
+    // Ensure the node metadata matches the current target coordinates
+    startPtr->index = start_idx;
+    endPtr->index   = end_idx;
 
     std::priority_queue<GridNodePtr, std::vector<GridNodePtr>, NodeComparator> empty;
     openSet_.swap(empty);
@@ -191,15 +218,19 @@ bool AStar::AstarSearch(const double step_size, Vector3d start_pt, Vector3d end_
                     neighborIdx(1) = (current->index)(1) + dy;
                     neighborIdx(2) = (current->index)(2) + dz;
 
-                    if (neighborIdx(0) < 1 || neighborIdx(0) >= POOL_SIZE_(0) - 1 || neighborIdx(1) < 1 || neighborIdx(1) >= POOL_SIZE_(1) - 1 || neighborIdx(2) < 1 || neighborIdx(2) >= POOL_SIZE_(2) - 1)
+                    if (!grid_map_->isInMap(neighborIdx))
                     {
                         continue;
                     }
 
-                    neighborPtr = GridNodeMap_[neighborIdx(0)][neighborIdx(1)][neighborIdx(2)];
+                    int ring_x = (neighborIdx(0) % POOL_SIZE_(0) + POOL_SIZE_(0)) % POOL_SIZE_(0);
+                    int ring_y = (neighborIdx(1) % POOL_SIZE_(1) + POOL_SIZE_(1)) % POOL_SIZE_(1);
+                    int ring_z = (neighborIdx(2) % POOL_SIZE_(2) + POOL_SIZE_(2)) % POOL_SIZE_(2);
+
+                    neighborPtr = GridNodeMap_[ring_x][ring_y][ring_z];
                     neighborPtr->index = neighborIdx;
 
-                    bool flag_explored = neighborPtr->rounds == rounds_;
+                    bool flag_explored = (neighborPtr->rounds == rounds_) && (neighborPtr->index == neighborIdx);
 
                     if (flag_explored && neighborPtr->state == GridNode::CLOSEDSET)
                     {
@@ -230,6 +261,7 @@ bool AStar::AstarSearch(const double step_size, Vector3d start_pt, Vector3d end_
                         neighborPtr->cameFrom = current;
                         neighborPtr->gScore = tentative_gScore;
                         neighborPtr->fScore = tentative_gScore + getHeu(neighborPtr, endPtr);
+                        openSet_.push(neighborPtr); //put neighbor in open set and record it.
                     }
                 }
         ros::Time time_2 = ros::Time::now();

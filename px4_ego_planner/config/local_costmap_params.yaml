@@ -8,8 +8,8 @@ costmap:
   rolling_window: true                  # Keeps the map centered on the moving drone
   static_map: false                     # No static map, only dynamic obstacles
   
-  width: 20.0                           # Map boundaries (20m x 20m)
-  height: 20.0
+  width: 25.0                           # Map boundaries (20m x 20m)
+  height: 25.0
   resolution: 0.1                       # Grid accuracy (10cm cells)
 
   # Define the layer pipeline
@@ -38,24 +38,24 @@ costmap:
       data_type: PointCloud2
       marking: true
       clearing: false
-      obstacle_range: 9.0
-      raytrace_range: 9.5
+      obstacle_range: 12.0
+      raytrace_range: 12.3
 
     tof_left:
       topic: /tof_sensor_left/pointcloud
       data_type: PointCloud2
       marking: true
       clearing: false
-      obstacle_range: 9.0
-      raytrace_range: 9.5
+      obstacle_range: 12.0
+      raytrace_range: 12.3
 
     tof_right:
       topic: /tof_sensor_right/pointcloud
       data_type: PointCloud2
       marking: true
       clearing: false
-      obstacle_range: 9.0
-      raytrace_range: 9.5
+      obstacle_range: 12.0
+      raytrace_range: 12.3
 
   inflation_layer:
     enabled: false

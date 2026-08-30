@@ -212,7 +212,7 @@ namespace ego_planner
 
   void EGOReplanFSM::waypointCallback(const geometry_msgs::PoseStampedPtr &msg)
   {
-    if (msg->pose.position.z < -0.1 || msg->header.frame_id != "world")
+    if (msg->header.frame_id != "world")
       return;
 
     cout << "Triggered!" << endl;
