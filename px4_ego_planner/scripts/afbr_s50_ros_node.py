@@ -413,7 +413,8 @@ def main():
                             msg.radiation_type = Range.INFRARED
                             msg.field_of_view = H_FOV
                             msg.min_range = 0.05
-                            msg.max_range = 15.0
+                            # msg.max_range = 15.0
+                            msg.max_range = 30.0    # S50LV85D
                             # Extract singular range tracker reading safely
                             msg.range = data.get('range', 0.0)
                             pub.publish(msg)
