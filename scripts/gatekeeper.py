@@ -93,7 +93,7 @@ class MasterGatekeeper:
         self.home_y = None          # Local Position Y in meters
         self.home_z = None          # Local Position Z in meters
 
-        self.current_mode = "Initial"
+        self.current_mode = 'None'
         self.planner_goal = None
         
         # Mission Stats
@@ -211,7 +211,7 @@ class MasterGatekeeper:
 
     def planner_finish(self):
         # Check if the drone is within the accepted radius of the target
-        if self.local_position is None:
+        if self.local_position is None or self.planner_goal is None:
             return False
         
         dx = self.local_position[0] - self.planner_goal[0]
@@ -463,8 +463,8 @@ class MasterGatekeeper:
                         self.qgc_conn.mav.mission_item_reached_send(self.mission_seq)
                         self.mission_seq += 1
             
-            elif "OFFBOARD" in self.current_mode and self.planner_goal is not None:
-                if self.planner_finish():
+            elif "OFFBOARD" in self.current_mode:
+                if self.planner_goal is None or self.planner_finish():
                     self.planner_goal = None
                     self.px4_conn.mav.command_long_send(
                             1,  # target system
@@ -543,9 +543,11 @@ class MasterGatekeeper:
                     if msg_p.type == 18 and msg_p.autopilot == 8:
                         continue
                     elif msg_p.type == 2:
+
+                        new_mode = self.get_px4_mode_names(msg_p.custom_mode)
                         
-                        if self.current_mode == "Initial":
-                            self.current_mode = self.get_px4_mode_names(msg_p.custom_mode)
+                        if self.current_mode == 'None':
+                            self.current_mode = new_mode
                         
                         if msg_p.custom_mode == PX4_OFFBOARD and "MISSION" in self.current_mode:
                             self.qgc_conn.mav.heartbeat_send(
@@ -557,6 +559,17 @@ class MasterGatekeeper:
                                 mavlink_version=3
                             )
                             continue
+                        
+                        elif msg_p.custom_mode != PX4_OFFBOARD and ("MISSION" in self.current_mode or "OFFBOARD" in self.current_mode):
+                            self.call_planner(self.local_position[0], self.local_position[1], self.local_position[2] + 0.3)
+                            self.planner_goal = None
+                            self.current_mode = new_mode
+                            rospy.loginfo(f"{CYAN}Set Mode Command received: Mode ID {msg_p.custom_mode} -> {self.current_mode}{ENDC}")
+                        
+                        elif self.current_mode != new_mode:
+                            self.current_mode = new_mode
+                            rospy.loginfo(f"{CYAN}Set Mode Command received: Mode ID {msg_p.custom_mode} -> {self.current_mode}{ENDC}") 
+                            
                 
                 self.qgc_conn.write(msg_p.get_msgbuf())
 
@@ -589,9 +602,8 @@ class MasterGatekeeper:
                         local_x, local_y, local_z = self.get_local_coords(msg_q.x / 1e7, msg_q.y / 1e7, msg_q.z)
                         rospy.loginfo(f"{GREEN}GO-TO Clicked! Meters from Home -> X (East): {local_x:.2f}m, Y (North): {local_y:.2f}m, Z (Up): {local_z:.2f}m{ENDC}")
                         self.current_mode = self.get_px4_mode_names(PX4_OFFBOARD)
-                        if local_z > 3.0:
-                            self.call_planner(local_x, local_y, local_z, sending_ack=True, command=192)
-                            self.planner_goal = (local_x, local_y, local_z)
+                        self.call_planner(local_x, local_y, local_z, sending_ack=True, command=192)
+                        self.planner_goal = (local_x, local_y, local_z)
                         
                     else:
                         self.px4_conn.write(msg_q.get_msgbuf())
@@ -622,8 +634,8 @@ class MasterGatekeeper:
                             0, 0, 0, 0
                         )
                         rospy.loginfo(f"{GREEN}--- RTL Mode Activated ---{ENDC}")
-                        self.call_planner(0.0, 0.0, 5.0, sending_ack=True, command=176)
-                        self.planner_goal = (0.0, 0.0, 5.0)
+                        self.call_planner(self.home_y, self.home_x, - self.home_z + 5.0, sending_ack=True, command=176)
+                        self.planner_goal = (self.home_x, self.home_y, - self.home_z + 5.0)
                         self.current_mode = self.get_px4_mode_names(PX4_OFFBOARD)
                         continue
                         
@@ -646,12 +658,12 @@ class MasterGatekeeper:
 
                     # Other Modes that should stop the planner
                     else:
-                        if "LAND" in mode_name:
-                            rospy.loginfo(f"{RED}--- Landing Mode Activated ---{ENDC}")
-                        
-                        elif "POSCTL" in mode_name or "STABILIZED" in mode_name:
-                            if "MISSION" in self.current_mode or "OFFBOARD" in self.current_mode:
+                        if "MISSION" in self.current_mode or "OFFBOARD" in self.current_mode:
+                            if "POSCTL" in mode_name or "LOITER" in mode_name:
                                 self.call_planner(self.local_position[0], self.local_position[1], self.local_position[2] + 0.3)
+                                self.planner_goal = None
+                            else:
+                                continue
                     
                     self.current_mode = mode_name
                     self.px4_conn.write(msg_q.get_msgbuf())

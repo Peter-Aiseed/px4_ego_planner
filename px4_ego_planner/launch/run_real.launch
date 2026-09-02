@@ -21,7 +21,6 @@
 
 	<!-- Stable TF Publisher and Virtual Ground from arkflow data -->
 	<node pkg="px4_ego_planner" type="stable_tf_pub.py" name="stable_tf_pub" output="screen" />
-	<node pkg="px4_ego_planner" type="virtual_ground.py" name="virtual_ground" output="screen" />
 
 	<!-- TOF sensors -->
 	<include file="$(find px4_ego_planner)/launch/tof_sensor.launch"/>

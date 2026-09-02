@@ -97,7 +97,7 @@ void bsplineCallback(traj_utils::BsplineConstPtr msg)
 std::pair<double, double> calculate_yaw(double t_cur, Eigen::Vector3d &pos, ros::Time &time_now, ros::Time &time_last)
 {
   constexpr double PI = 3.1415926;
-  constexpr double YAW_DOT_MAX_PER_SEC = PI;
+  constexpr double YAW_DOT_MAX_PER_SEC = PI/2;
   // constexpr double YAW_DOT_DOT_MAX_PER_SEC = PI;
   std::pair<double, double> yaw_yawdot(0, 0);
   double yaw = 0;
@@ -277,7 +277,10 @@ void cmdCallback(const ros::TimerEvent &e)
 
   px4_cmd.header.stamp = time_now;
   px4_cmd.coordinate_frame = 1;
-  px4_cmd.type_mask = 0;
+  // px4_cmd.type_mask = 0;
+  px4_cmd.type_mask = mavros_msgs::PositionTarget::IGNORE_AFX |
+                      mavros_msgs::PositionTarget::IGNORE_AFY |
+                      mavros_msgs::PositionTarget::IGNORE_AFZ;
 
   px4_cmd.position.x = pos(0);
   px4_cmd.position.y = pos(1);

@@ -291,6 +291,34 @@ class AFBR_S50_UART:
         except: pass
         finally: self.ser.close()
 
+def print_sensor_data(data, mode):
+    print("\n" + "=" * 70)
+    print(f"AFBR-S50 MODE: {mode} ({AFBR_S50_UART.OUTPUT_MODES[mode]:#04x})")
+    print("=" * 70)
+
+    for key, value in data.items():
+        if key == "pixels":
+            print(f"\n{key}: {len(value)} pixels")
+
+            for i, pixel in enumerate(value):
+                print(
+                    f"  Pixel[{i}] "
+                    f"id={pixel['id']} "
+                    f"status={pixel['status']} "
+                    f"range={pixel['range']:.6f} m "
+                    f"amplitude={pixel['amplitude']:.3f}"
+                )
+
+        elif key == "raw_samples":
+            print(f"\n{key}:")
+            for i, samples in enumerate(value):
+                print(f"  Channel[{i}]: {samples}")
+
+        else:
+            print(f"{key}: {value}")
+
+    print("=" * 70)
+
 def main():
     rospy.init_node('afbr_s50_driver', anonymous=False)
     node_name = rospy.get_name()
@@ -302,6 +330,7 @@ def main():
     fps = rospy.get_param('~fps', 10.0)
     mode = rospy.get_param('~mode', '1d').lower()
     frame_id = rospy.get_param('~frame_id', 'tof_link')
+    print_data = rospy.get_param('~print_data', False)
 
     # 2. Determine topics based on selected target mode architecture
     is_3d_mode = mode.startswith('3d') or mode.startswith('full')
@@ -314,7 +343,7 @@ def main():
 
     # Wide FoV Angular Grid Constants (8 Columns x 4 Rows)
     TOTAL_COLS, TOTAL_ROWS = 8, 4
-    H_FOV, V_FOV = math.radians(12.4), math.radians(5.4) # Update to match your exact variant model sheet
+    H_FOV, V_FOV = math.radians(2.0), math.radians(2.0) # Update to match your exact variant model sheet
     H_STEP, V_STEP = H_FOV / TOTAL_COLS, V_FOV / TOTAL_ROWS
 
     # 3. Connection and sensor setup
@@ -345,6 +374,9 @@ def main():
                         if not data:
                             continue
                         
+                        if print_data:
+                            print_sensor_data(data, mode)
+
                         # --- OUTPUT BRANCH 1: POINT CLOUD (3D MODE) ---
                         if is_3d_mode and "pixels" in data:
                             cloud_points = []
