@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   geometry_msgs
+  sensor_msgs
   nav_msgs
   mavros_msgs
   visualization_msgs
@@ -56,6 +57,11 @@ target_link_libraries(visualization_node
   ${catkin_LIBRARIES}
 )
 add_dependencies(visualization_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+## tof_ceiling_map
+add_executable(tof_ceiling_map src/tof_ceiling_map.cpp)
+target_link_libraries(tof_ceiling_map ${catkin_LIBRARIES})
+add_dependencies(tof_ceiling_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Optional but recommended: install targets
 install(TARGETS real_mode_manager sim_mode_manager setgoal_node vins_transfer visualization_node

@@ -338,8 +338,8 @@ def main():
         pub = rospy.Publisher('~pointcloud', PointCloud2, queue_size=10)
         rospy.loginfo(f"[{node_name}] Initialized in 3D Mode -> Publishing on ~pointcloud")
     else:
-        pub = rospy.Publisher('~range', Range, queue_size=10)
-        rospy.loginfo(f"[{node_name}] Initialized in 1D Mode -> Publishing on ~range")
+        pub = rospy.Publisher('~pointcloud', PointCloud2, queue_size=10)
+        rospy.loginfo(f"[{node_name}] Initialized in 1D Mode -> Publishing on ~pointcloud")
 
     # Wide FoV Angular Grid Constants (8 Columns x 4 Rows)
     TOTAL_COLS, TOTAL_ROWS = 8, 4
@@ -407,17 +407,15 @@ def main():
 
                         # --- OUTPUT BRANCH 2: RANGE MESSAGE (1D MODE) ---
                         elif not is_3d_mode:
-                            msg = Range()
-                            msg.header.stamp = rospy.Time.now()
-                            msg.header.frame_id = frame_id
-                            msg.radiation_type = Range.INFRARED
-                            msg.field_of_view = H_FOV
-                            msg.min_range = 0.05
-                            # msg.max_range = 15.0
-                            msg.max_range = 30.0    # S50LV85D
-                            # Extract singular range tracker reading safely
-                            msg.range = data.get('range', 0.0)
-                            pub.publish(msg)
+                            r = data.get('range', 0.0)
+
+                            if r > 0.0:
+                                cloud_points = [[r, 0.0, 0.0]]
+                                header = std_msgs.msg.Header()
+                                header.stamp = rospy.Time.now()
+                                header.frame_id = frame_id
+                                cloud_msg = pc2.create_cloud_xyz32(header, cloud_points)
+                                pub.publish(cloud_msg)
 
             loop_rate.sleep()
         except rospy.ROSInterruptException:

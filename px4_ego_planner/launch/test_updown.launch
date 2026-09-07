@@ -1,0 +1,30 @@
+<launch>
+
+  <!-- Mavros Node -->
+	<include file="$(find mavros)/launch/node.launch">
+		<arg name="pluginlists_yaml" value="$(find px4_ego_planner)/config/px4_pluginlists.yaml" />
+		<arg name="config_yaml" value="$(find px4_ego_planner)/config/px4_config.yaml" />
+		<arg name="fcu_url" value="/dev/ttyAMA3:921600" />
+		<arg name="gcs_url" value="udp://@172.17.0.1:14550" />
+		<!-- <arg name="gcs_url" value="" /> -->
+		<arg name="tgt_system" value="1" />
+		<arg name="tgt_component" value="1" />
+	</include>
+    
+	<!-- TF Tree -->
+	<node pkg="tf" type="static_transform_publisher" name="world_to_map" args="0 0 0 0 0 0 world map 10"/>
+	<node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 10"/>
+
+	<!-- Stable TF Publisher and Virtual Ground from arkflow data -->
+	<node pkg="px4_ego_planner" type="stable_tf_pub.py" name="stable_tf_pub" output="screen" />
+
+	<!-- TOF sensors -->
+	<include file="$(find px4_ego_planner)/launch/tof_sensor.launch"/>
+
+	<!-- TOF Ceiling Map -->
+	<node pkg="px4_ego_planner" type="tof_ceiling_map" name="tof_ceiling_map" output="screen">
+		<param name="resolution" value="0.15" />
+		<param name="target_frame_id" value="odom" />
+	</node>
+
+</launch>	
