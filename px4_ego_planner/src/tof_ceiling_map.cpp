@@ -40,6 +40,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <vector>
 
 class TofCeilingMap {
 public:
@@ -48,7 +49,9 @@ public:
           origin_x_(0.0f), origin_y_(0.0f),
           origin_set_(false),
           have_pose_(false),
-          drone_x_(0.0f), drone_y_(0.0f), drone_z_(0.0f)
+          drone_x_(0.0f), drone_y_(0.0f), drone_z_(0.0f),
+          have_raw_point_(false),
+          raw_point_z_(0.0f)
     {
         pnh.param("resolution", resolution_, 0.1f);
         pnh.param("min_range", min_range_, 0.05f);
@@ -59,6 +62,7 @@ public:
         pnh.param("divergence_threshold", divergence_threshold_, 1.0f); // meters
         pnh.param("confirm_count", confirm_count_, 10); // consecutive diverging samples needed to commit
 
+        buildRings();
         tf_listener_.reset(new tf2_ros::TransformListener(tf_buffer_));
 
         committed_.fill(std::numeric_limits<float>::quiet_NaN());
@@ -81,8 +85,11 @@ public:
     }
 
 private:
-    static constexpr int SIZE = 15;        // 15x15 -> 2.25m x 2.25m @ 0.15m res
+    static constexpr int SIZE = 31;        // 31x31 -> 4.65m x 4.65m @ 0.15m res
     static constexpr int CENTER_SPAN = 5;  // 5x5 = 25 cells published
+
+    static constexpr float RAW_MIN_Z = 1.0f;
+    static constexpr float RAW_MAX_Z = 20.0f;
 
     const int half_;
     float resolution_;
@@ -99,11 +106,16 @@ private:
     std::array<float, SIZE * SIZE> temporal_;  // candidate value during a diverging streak
     std::array<int, SIZE * SIZE> counter_;     // consecutive diverging samples supporting temporal_
 
+    std::vector<std::vector<int>> rings_;
+
     float origin_x_, origin_y_;
     bool origin_set_;
 
     bool have_pose_;
     float drone_x_, drone_y_, drone_z_;
+
+    bool have_raw_point_;
+    float raw_point_z_;
 
     ros::Subscriber cloud_sub_, pose_sub_;
     ros::Publisher center_pub_;
@@ -115,11 +127,30 @@ private:
         return roundf(v / resolution_) * resolution_;
     }
 
+    void buildRings()
+    {
+        rings_.resize(half_ + 1);
+
+        for (int iy = 0; iy < SIZE; ++iy) {
+            for (int ix = 0; ix < SIZE; ++ix) {
+
+                int dx = ix - half_;
+                int dy = iy - half_;
+
+                int ring = std::max(std::abs(dx), std::abs(dy));
+
+                rings_[ring].push_back(idx(ix, iy));
+            }
+        }
+    }
+
     void poseCb(const geometry_msgs::PoseStamped::ConstPtr& msg) {
         drone_x_ = msg->pose.position.x;
         drone_y_ = msg->pose.position.y;
         drone_z_ = msg->pose.position.z;
         have_pose_ = true;
+        
+        maybeShiftGrid();
     }
 
     // Re-origin the grid to stay centered on the drone; preserve overlapping cells.
@@ -238,8 +269,6 @@ private:
     void cloudCb(const sensor_msgs::PointCloud2::ConstPtr& msg) {
         if (!have_pose_) return;
 
-        maybeShiftGrid();
-
         sensor_msgs::PointCloud2 cloud_in_target;
 
         if (msg->header.frame_id == target_frame_id_) {
@@ -267,8 +296,22 @@ private:
         sensor_msgs::PointCloud2ConstIterator<float> it_y(cloud_in_target, "y");
         sensor_msgs::PointCloud2ConstIterator<float> it_z(cloud_in_target, "z");
 
+        have_raw_point_ = false;
+
         for (; it_x != it_x.end(); ++it_x, ++it_y, ++it_z) {
             if (std::isnan(*it_x) || std::isnan(*it_y) || std::isnan(*it_z)) continue;
+
+            // Reject invalid raw ToF range
+            if (!std::isfinite(*it_x) || !std::isfinite(*it_y) || !std::isfinite(*it_z)) continue;
+            
+            float raw_range = *it_z - drone_z_;
+            if (raw_range < RAW_MIN_Z || raw_range > RAW_MAX_Z) continue;
+
+            if (!have_raw_point_) {
+                raw_point_z_ = *it_z;
+                have_raw_point_ = true;
+            }
+
             insertPoint(*it_x, *it_y, *it_z);
         }
 
@@ -278,7 +321,8 @@ private:
 
     // Smallest vertical clearance among the 25 center committed cells ->
     // sensor_msgs/Range for MAVROS to relay as DISTANCE_SENSOR to PX4.
-    void publishMinRange(const ros::Time& stamp) {
+    void publishMinRange(const ros::Time& stamp)
+    {
         sensor_msgs::Range range_msg;
         range_msg.header.stamp = stamp;
         range_msg.header.frame_id = range_frame_id_;
@@ -288,40 +332,71 @@ private:
         range_msg.max_range = max_range_;
 
         if (!have_pose_) {
-            range_msg.range = max_range_ + 1.0f; // out-of-range -> PX4 treats as no valid data
+            range_msg.range = max_range_ + 1.0f;
             range_pub_.publish(range_msg);
             return;
         }
 
-        int lo = half_ - (CENTER_SPAN - 1) / 2;
-        int hi = half_ + (CENTER_SPAN - 1) / 2;
+        // ============================================================
+        // Layer 1:
+        // Search the center 5x5 map area.
+        // ============================================================
 
-        float min_range = std::numeric_limits<float>::infinity();
-        bool found = false;
+        int cell = findCenterCell();
+        if (cell >= 0) {
+            float z = committed_[cell];
+            float range = z - drone_z_;
 
-        for (int iy = lo; iy <= hi; ++iy) {
-            for (int ix = lo; ix <= hi; ++ix) {
-                float z = committed_[idx(ix, iy)];
-                if (std::isnan(z)) continue;
+            if (range < 0.0f)
+                range = 0.0f;
 
-                float r = z - drone_z_;
-                if (r < 0.0f) r = 0.0f;
-
-                if (r < min_range) {
-                    min_range = r;
-                    found = true;
-                    }
-            }
+            range_msg.range = std::min(range, max_range_);
+            range_pub_.publish(range_msg);
+            return;
         }
 
-        if (!found) {
-            // No mapped cells under the drone yet -> report out-of-range so PX4/CPV
-            // falls back to CPV_GO_NO_DATA behavior rather than trusting a fabricated value.
-            range_msg.range = max_range_ + 1.0f;
-        } else {
-            range_msg.range = std::min(min_range, max_range_);
+        // ============================================================
+        // Layer 2:
+        // Center 5x5 is empty.
+        // Search the rest of the map from closest ring outward.
+        // ============================================================
+
+        cell = findClosestOuterMapCell();
+        if (cell >= 0) {
+            float z = committed_[cell];
+            float range = z - drone_z_;
+
+            if (range < 0.0f)
+                range = 0.0f;
+
+            range_msg.range = std::min(range, max_range_);
+            range_pub_.publish(range_msg);
+            return;
         }
 
+        // ============================================================
+        // Layer 3:
+        // Map has no valid points.
+        // Use the latest raw PointCloud measurement.
+        // ============================================================
+
+        if (have_raw_point_) {
+            float range = raw_point_z_ - drone_z_;
+
+            if (range < 0.0f)
+                range = 0.0f;
+
+            range_msg.range = std::min(range, max_range_);
+            range_pub_.publish(range_msg);
+            return;
+        }
+
+        // ============================================================
+        // No map point and no raw PointCloud point.
+        // Clear / out of sensing range.
+        // ============================================================
+
+        range_msg.range = max_range_ + 1.0f;
         range_pub_.publish(range_msg);
     }
 
@@ -373,6 +448,45 @@ private:
 
         center_pub_.publish(out);
     }
+
+    int findCenterCell()
+    {
+        const int center_ring = CENTER_SPAN / 2;
+        int best_cell = -1;
+        float best_z = std::numeric_limits<float>::infinity();
+
+        for (int ring = 0; ring <= center_ring; ++ring) {
+            for (int cell : rings_[ring]) {
+                const float z = committed_[cell];
+
+                if (std::isnan(z))
+                    continue;
+
+                if (z < best_z) {
+                    best_z = z;
+                    best_cell = cell;
+                }
+            }
+        }
+        return best_cell;
+    }
+
+    int findClosestOuterMapCell()
+    {
+        const int first_outer_ring = CENTER_SPAN / 2 + 1;
+
+        for (int ring = first_outer_ring; ring <= half_; ++ring) {
+            for (int cell : rings_[ring]) {
+                if (std::isnan(committed_[cell]))
+                    continue;
+
+                return cell;
+            }
+        }
+        return -1;
+    }
+
+
 };
 
 int main(int argc, char** argv) {

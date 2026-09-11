@@ -126,10 +126,11 @@ RUN apt-get update && apt-get install -y \
     python3-wheel \
     python3-lxml \
     python3-serial \
+    iproute2 \
     nano \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install numpy pandas scipy pymavlink
+RUN pip3 install numpy pandas scipy pymavlink python-can pyusb dronecan
 
 RUN echo "source /opt/ros/noetic/setup.bash" >> /root/.bashrc && \
     echo "source /ws_ros1/devel/setup.bash" >> /root/.bashrc

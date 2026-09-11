@@ -25,6 +25,12 @@
 	<!-- TOF sensors -->
 	<include file="$(find px4_ego_planner)/launch/tof_sensor.launch"/>
 
+	<!-- TOF Ceiling Map -->
+	<node pkg="px4_ego_planner" type="tof_ceiling_map" name="tof_ceiling_map" output="screen">
+		<param name="resolution" value="0.15" />
+		<param name="target_frame_id" value="odom" />
+	</node>
+
 	<!-- Costmap_2d Node -->
 	<node name="costmap_node" pkg="costmap_2d" type="costmap_2d_node" output="screen">
 		<rosparam file="$(find px4_ego_planner)/config/local_costmap_params.yaml" command="load"/>

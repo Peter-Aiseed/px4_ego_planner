@@ -1,5 +1,8 @@
 <launch>
   <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+    
+    <arg name="json_file_path"      default="$(find px4_ego_planner)/resource/realsense_d435/camera.json"/>
+    
     <arg name="enable_color"               value="false"/>
     <arg name="enable_depth"               value="true"/>
     <arg name="enable_infra1"              value="true"/>     <!-- needed for texture -->
