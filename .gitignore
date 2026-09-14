@@ -1,3 +1,6 @@
 *.gv
 *.pdf
 rosbag/
+can_host/src/can_host/__pycache__/*
+can_host/src/can_host/can_bus/__pycache__/*
+can_host/src/can_host/devices/__pycache__/*

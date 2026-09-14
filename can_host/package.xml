@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>can_host</name>
+  <version>0.1.0</version>
+  <description>AFBR-S50 ToF CAN host, publishing to ROS.</description>
+  <maintainer email="you@example.com">Your Name</maintainer>
+  <license>TODO</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+</package>
