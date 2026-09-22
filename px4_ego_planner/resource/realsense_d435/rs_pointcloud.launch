@@ -12,8 +12,8 @@
     <arg name="align_depth"                value="false"/>
 
     <!-- Use infrared as pointcloud texture since D430 has no color -->
-    <arg name="pointcloud_texture_stream"  value="RS2_STREAM_INFRARED"/>
-    <arg name="pointcloud_texture_index"   value="1"/>
+    <arg name="pointcloud_texture_stream"  value="RS2_STREAM_ANY"/>
+    <arg name="pointcloud_texture_index"   value="0"/>
 
     <arg name="depth_width"                value="480"/>
     <arg name="depth_height"               value="270"/>

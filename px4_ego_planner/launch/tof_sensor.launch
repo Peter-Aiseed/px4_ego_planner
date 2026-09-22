@@ -4,18 +4,24 @@
           args="0.0 0.10 -0.04 1.5708 -0.1745 0.0 base_link tof_0x1a_link 100" />
 
     <node pkg="tf" type="static_transform_publisher" name="base_to_tof_right" 
-          args="0.0 -0.10 -0.04 -1.5708 -0.1745 0.0 base_link uavcan_tof_0x1b_link 100" />
+          args="0.0 -0.10 -0.04 -1.5708 -0.1745 0.0 base_link uavcan_tof_0x7d_link 100" />
 
     <node pkg="tf" type="static_transform_publisher" name="base_to_tof_back" 
           args="-0.10 0.0 -0.04 3.1415 -0.1745 0.0 base_link tof_0x1d_link 100" />
     
     <node pkg="tf" type="static_transform_publisher" name="base_to_tof_up" 
-          args="0.0 0.05 0.10 0.0 -1.5708 0.0 base_link tof_0x19_link 100" />
+          args="0.0 0.05 0.15 0.0 -1.5708 0.0 base_link tof_0x19_link 100" />
 
     <node pkg="can_host" type="can_host_ros_node.py" name="can_host_ros" output="screen">
         <remap from="pointcloud/tof/id_0x19" to="/tof_sensor_up/pointcloud"/>
         <remap from="pointcloud/tof/id_0x1a" to="/tof_sensor_left/pointcloud"/>
-        <remap from="pointcloud/uavcan_tof/id_0x1b" to="/tof_sensor_right/pointcloud"/>
+        <remap from="pointcloud/uavcan_tof/id_0x7d" to="/tof_sensor_right/pointcloud"/>
         <remap from="pointcloud/tof/id_0x1d" to="/tof_sensor_back/pointcloud"/>
+    </node>
+
+    <!-- TOF Ceiling Map -->
+    <node pkg="px4_ego_planner" type="tof_ceiling_map" name="tof_ceiling_map" output="screen">
+        <param name="resolution" value="0.15" />
+        <param name="target_frame_id" value="odom" />
     </node>
 </launch>

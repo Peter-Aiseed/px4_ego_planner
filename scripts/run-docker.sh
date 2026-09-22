@@ -43,7 +43,7 @@ docker run -it -d \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   -v $HOME/.Xauthority:/root/.Xauthority:ro \
   -v $HOME/Projects/ego_ws:/ws_ego \
-  --name noetic noetic:latest \
+  --name noetic px4-ego-noetic:nx-1.0 \
   bash -c "
     if ! grep -q '/ws_ego/devel/setup.bash' ~/.bashrc; then
       echo 'source /ws_ego/devel/setup.bash' >> ~/.bashrc
