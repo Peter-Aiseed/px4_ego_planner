@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Test double for roslaunch. Records its start and stays alive until TERM/INT,
+# unless configured to exit immediately (simulating a crash).
+set -u
+
+ev="${FAKE_EVENTS:-/dev/null}"
+printf 'START roslaunch args=%s\n' "$*" >>"$ev" 2>/dev/null || true
+
+if [ "${FAKE_ROSLAUNCH_EXIT_IMMEDIATELY:-0}" = "1" ]; then
+  printf 'EXIT roslaunch 3\n' >>"$ev" 2>/dev/null || true
+  exit 3
+fi
+
+trap 'printf "TERM roslaunch\n" >>"$ev" 2>/dev/null || true; exit 0' TERM
+trap 'printf "INT roslaunch\n" >>"$ev" 2>/dev/null || true; exit 0' INT
+
+while :; do sleep 0.05; done

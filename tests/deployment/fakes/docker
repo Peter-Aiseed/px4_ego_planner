@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# Test double for the docker CLI.
+# Behaviour is controlled by FAKE_DOCKER_* environment variables and every
+# invocation (full argv) is appended to $FAKE_DOCKER_LOG.
+set -u
+
+log="${FAKE_DOCKER_LOG:-/dev/null}"
+record() { printf '%s\n' "$*" >>"$log" 2>/dev/null || true; }
+
+original_args="$*"
+record "docker $original_args"
+
+cmd="${1:-}"
+if [ $# -gt 0 ]; then shift; fi
+
+case "$cmd" in
+  info)
+    if [ "${FAKE_DOCKER_INFO_FAIL:-0}" = "1" ]; then exit 1; fi
+    exit 0
+    ;;
+  image)
+    sub="${1:-}"
+    if [ "$sub" = "inspect" ]; then
+      if [ "${FAKE_DOCKER_IMAGE_MISSING:-0}" = "1" ]; then exit 1; fi
+      exit 0
+    fi
+    exit 0
+    ;;
+  inspect)
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --format|-f) shift 2 ;;
+        *) shift ;;
+      esac
+    done
+    case "${FAKE_DOCKER_CONTAINER_STATE:-absent}" in
+      running) printf 'true\n' ;;
+      stopped) printf 'false\n' ;;
+      *) exit 1 ;;
+    esac
+    exit 0
+    ;;
+  container)
+    sub="${1:-}"
+    if [ "$sub" != "inspect" ]; then exit 0; fi
+    shift
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --format|-f) shift 2 ;;
+        *) shift ;;
+      esac
+    done
+    case "${FAKE_DOCKER_CONTAINER_STATE:-absent}" in
+      running) printf 'true\n' ;;
+      stopped) printf 'false\n' ;;
+      *) exit 1 ;;
+    esac
+    exit 0
+    ;;
+  rm)
+    if [ "${1:-}" = "-f" ]; then
+      record "docker rm -f REFUSED"
+      exit 1
+    fi
+    if [ "${FAKE_DOCKER_RM_FAIL:-0}" = "1" ]; then
+      exit 1
+    fi
+    exit 0
+    ;;
+  stop)
+    exit 0
+    ;;
+  run)
+    exit "${FAKE_DOCKER_RUN_EXIT:-0}"
+    ;;
+  *)
+    exit 0
+    ;;
+esac

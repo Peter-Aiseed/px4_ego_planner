@@ -1,0 +1,15 @@
+[Unit]
+Description=PX4 + EGO-Planner deployment service (attached Docker container)
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/bash /home/nvidia/ego_ws/src/px4_ego_planner/deploy/start_service.sh
+ExecStop=-/usr/bin/docker stop -t 30 px4-ego
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=45
+
+[Install]
+WantedBy=multi-user.target
