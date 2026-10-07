@@ -22,6 +22,15 @@
 		<rosparam file="$(find px4_ego_planner)/config/local_costmap_params.yaml" command="load"/>
 	</node>
 
-	<node pkg="px4_ego_planner" type="scan_to_mavros.py" name="costmap_to_mavros" output="screen"/>
+	<node pkg="px4_ego_planner" type="scan_to_mavros.py" name="costmap_to_mavros" output="screen">
+		<!-- Liveness watchdog -->
+		<param name="sensor_timeout"    value="0.5"/>
+
+		<!-- Raw sensor topics (set to your real ones) -->
+		<param name="realsense_topic"   value="/camera/depth/color/points"/>
+		<param name="tof_left_topic"    value="/tof_sensor_left/pointcloud"/>
+		<param name="tof_back_topic"    value="/tof_sensor_back/pointcloud"/>
+		<param name="tof_right_topic"   value="/tof_sensor_right/pointcloud"/>
+	</node>
 
 </launch>	

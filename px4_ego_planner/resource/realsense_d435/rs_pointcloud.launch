@@ -36,12 +36,12 @@
 		<param name="target_frame" value="base_link_stable"/>
     <param name="transform_tolerance" value="0.2"/>
 		<param name="min_height" value="-0.5"/>
-		<param name="max_height" value="0.5"/>
+		<param name="max_height" value="1.0"/>
 		<param name="angle_min" value="-0.7853981634"/>
 		<param name="angle_max" value="0.7853981634"/>
 		<param name="angle_increment" value="0.0087266463"/>
 		<param name="range_min" value="1.0"/>
-		<param name="range_max" value="9.8"/>
+		<param name="range_max" value="14.8"/>
 		<param name="use_inf" value="true"/>
 	</node>
 

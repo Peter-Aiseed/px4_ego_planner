@@ -12,7 +12,7 @@ class LocalCostmapToMavros:
         rospy.init_node('costmap_to_mavros_obstacles', anonymous=True)
         
         self.num_bins = 72 
-        self.max_detection_dist = 10.0 
+        self.max_detection_dist = 15.0 
         self.angle_increment = (2 * math.pi) / self.num_bins
         self.angle_shift = self.angle_increment / 2.0 
         
@@ -30,9 +30,27 @@ class LocalCostmapToMavros:
         self.sub_update = rospy.Subscriber('/costmap_node/costmap/costmap_updates', OccupancyGridUpdate, self.map_update_callback, queue_size=10)
         
         self.pub = rospy.Publisher('/mavros/obstacle/send', LaserScan, queue_size=10)
+
+        # --- Sensor liveness watchdog ---
+        self.sensor_timeout = rospy.get_param('~sensor_timeout', 0.5)  # seconds
+
+        sensor_topics = {
+            'realsense_front': rospy.get_param('~realsense_topic', '/camera_front/depth/color/points'),
+            'tof_left':        rospy.get_param('~tof_left_topic',  '/tof_left/points'),
+            'tof_back':        rospy.get_param('~tof_back_topic',  '/tof_back/points'),
+            'tof_right':       rospy.get_param('~tof_right_topic', '/tof_right/points'),
+        }
+
+        self.last_rx = {name: None for name in sensor_topics}
+        self.sensor_ok = None  # for logging state transitions only
+        self.sensor_subs = []
+        for name, topic in sensor_topics.items():
+            self.sensor_subs.append(
+                rospy.Subscriber(topic, rospy.AnyMsg,
+                                lambda m, n=name: self.sensor_cb(n), queue_size=1))
         
-        # Timer callback executing at 10 Hz to guarantee steady MAVROS stream
-        self.timer = rospy.Timer(rospy.Duration(0.1), self.timer_callback)
+        # Timer callback executing at 20 Hz to guarantee steady MAVROS stream
+        self.timer = rospy.Timer(rospy.Duration(0.05), self.timer_callback)
         rospy.loginfo("Costmap to MAVROS node started.")
 
     def full_map_callback(self, msg):
@@ -54,10 +72,31 @@ class LocalCostmapToMavros:
         
         # Splice the patch into the master grid using the given bounding box coordinates
         self.grid[msg.y : msg.y + msg.height, msg.x : msg.x + msg.width] = update_data
+    
+    def sensor_cb(self, name):
+        self.last_rx[name] = rospy.Time.now()
 
+    def sensors_alive(self):
+        now = rospy.Time.now()
+        status = {n: (t is not None and (now - t).to_sec() < self.sensor_timeout)
+                for n, t in self.last_rx.items()}
+        ok = all(status.values())
+
+        if ok != self.sensor_ok:
+            if ok:
+                rospy.loginfo("All sensors healthy - resuming obstacle stream.")
+            else:
+                dead = [n for n, alive in status.items() if not alive]
+                rospy.logwarn("Sensor timeout: %s - STOPPING obstacle stream.", dead)
+            self.sensor_ok = ok
+        return ok
+    
     def timer_callback(self, event):
         if self.grid is None or self.map_info is None:
             return
+        
+        if not self.sensors_alive():
+            return  # publish nothing so PX4 sees the data timeout
 
         # 1. Look up drone heading (yaw) relative to the map frame
         try:
