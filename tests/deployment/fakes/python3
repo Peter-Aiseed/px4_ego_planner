@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Test double for python3, standing in for gatekeeper.py.
+# Records its start and stays alive until TERM/INT.
+set -u
+
+ev="${FAKE_EVENTS:-/dev/null}"
+printf 'START gatekeeper args=%s\n' "$*" >>"$ev" 2>/dev/null || true
+
+trap 'printf "TERM gatekeeper\n" >>"$ev" 2>/dev/null || true; exit 0' TERM
+trap 'printf "INT gatekeeper\n" >>"$ev" 2>/dev/null || true; exit 0' INT
+
+while :; do sleep 0.05; done

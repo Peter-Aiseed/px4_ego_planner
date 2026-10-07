@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Test double for hostname. Used when the deployment script derives ROS_IP
+# from the machine's first IPv4 address. Never touches the real interfaces.
+set -u
+
+ev="${FAKE_EVENTS:-/dev/null}"
+printf 'CALL hostname %s\n' "$*" >>"$ev" 2>/dev/null || true
+
+case "${1:-}" in
+  -I)
+    printf '%s %s\n' "${FAKE_HOSTNAME_IP:-10.0.0.5}" "${FAKE_HOSTNAME_SECOND_IP:-172.17.0.1}"
+    ;;
+  *)
+    printf 'test-host\n'
+    ;;
+esac

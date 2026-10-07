@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Test double for roscore. Records its start (with the ROS environment it
+# inherited) and stays alive until TERM/INT is received.
+set -u
+
+ev="${FAKE_EVENTS:-/dev/null}"
+printf 'START roscore ROS_MASTER_URI=%s ROS_IP=%s ROS_HOSTNAME=%s\n' \
+  "${ROS_MASTER_URI:-}" "${ROS_IP:-}" "${ROS_HOSTNAME:-}" >>"$ev" 2>/dev/null || true
+: >"${ev}.roscore-started" 2>/dev/null || true
+
+trap 'printf "TERM roscore\n" >>"$ev" 2>/dev/null || true; exit 0' TERM
+trap 'printf "INT roscore\n" >>"$ev" 2>/dev/null || true; exit 0' INT
+
+while :; do sleep 0.05; done
