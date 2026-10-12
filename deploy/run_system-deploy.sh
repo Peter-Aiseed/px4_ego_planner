@@ -68,14 +68,9 @@ do
 done
 
 # --- ROS networking (preserve the existing deployment convention) -------------
-if [ -z "${ROS_MASTER_URI:-}" ]; then
-  if [ -z "${ROS_IP:-}" ]; then
-    ROS_IP="$(hostname -I | cut -d' ' -f1)"
-    export ROS_IP
-  fi
-  export ROS_MASTER_URI="http://${ROS_IP}:11311"
-  unset ROS_HOSTNAME
-fi
+export ROS_IP="192.168.0.101"
+export ROS_MASTER_URI="http://${ROS_IP}:11311"
+unset ROS_HOSTNAME
 
 # --- shutdown helpers ---------------------------------------------------------
 stop_child() {
