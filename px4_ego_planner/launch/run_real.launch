@@ -28,9 +28,9 @@
 
 		<!-- Raw sensor topics (set to your real ones) -->
 		<param name="realsense_topic"   value="/camera/depth/color/points"/>
-		<param name="tof_left_topic"    value="/tof_sensor_left/pointcloud"/>
+		<!-- <param name="tof_left_topic"    value="/tof_sensor_left/pointcloud"/> -->
 		<param name="tof_back_topic"    value="/tof_sensor_back/pointcloud"/>
-		<param name="tof_right_topic"   value="/tof_sensor_right/pointcloud"/>
+		<!-- <param name="tof_right_topic"   value="/tof_sensor_right/pointcloud"/> -->
 	</node>
 
 </launch>	
