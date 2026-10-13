@@ -6,26 +6,22 @@ Used only when the kernel has *not* claimed the device with the in-tree
 
 from __future__ import annotations
 
-import logging
-import time
-from typing import Optional
-
 import can
 
-from ..events import CANFrame, EventBus
-from .base import CANBus, CANBusError
+from ..events import EventBus
 from ._listener import FrameListener
+from .base import CANBus, CANBusError
+from .factory import register_bus
 
-logger = logging.getLogger(__name__)
 
-
+@register_bus("gs_usb")
 class GsUsbBus(CANBus):
     def __init__(self, channel: str, event_bus: EventBus, bitrate: int) -> None:
         super().__init__(name=f"gs_usb:{channel}", event_bus=event_bus)
         self._bitrate = bitrate
         self._channel = channel
-        self._bus: Optional[can.BusABC] = None
-        self._notifier: Optional[can.Notifier] = None
+        self._bus: can.BusABC | None = None
+        self._notifier: can.Notifier | None = None
 
     def _open(self) -> None:
         try:
@@ -43,34 +39,29 @@ class GsUsbBus(CANBus):
             raise CANBusError(f"gs_usb open failed: {exc}") from exc
 
         self._notifier = can.Notifier(
-            self._bus, [FrameListener(self._publish_frame, self._emit_status)], timeout=0.1,
+            self._bus,
+            [FrameListener(self._publish_frame)],
+            timeout=0.1,
         )
 
     def _close(self) -> None:
         if self._notifier is not None:
             try:
                 self._notifier.stop()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 pass
             self._notifier = None
         if self._bus is not None:
             try:
                 self._bus.shutdown()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 pass
             self._bus = None
 
-    def send_remote_frame(self, can_id: int) -> None:
+    def _send_message(self, msg: can.Message) -> None:
         if self._bus is None:
             raise CANBusError("bus not open")
-        msg = can.Message(
-            arbitration_id=can_id,
-            is_extended_id=False,
-            is_remote_frame=True,
-            dlc=0,
-            data=b"",
-        )
         try:
             self._bus.send(msg, timeout=1.0)
         except can.CanError as exc:
-            raise CANBusError(f"send remote 0x{can_id:X} failed: {exc}") from exc
+            raise CANBusError(f"send 0x{msg.arbitration_id:X} failed: {exc}") from exc

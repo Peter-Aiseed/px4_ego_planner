@@ -13,16 +13,17 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Optional
+from typing import Any
 
 import can
-from can.interfaces.slcan import slcanBus
 from can.exceptions import error_check
+from can.interfaces.slcan import slcanBus
 from serial import Timeout
 
-from ..events import CANFrame, EventBus
-from .base import CANBus, CANBusError
+from ..events import EventBus
 from ._listener import FrameListener
+from .base import CANBus, CANBusError
+from .factory import register_bus
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 class _FastSlcanBus(slcanBus):
     """``slcanBus`` with batch reads instead of ``read(1)`` byte-at-a-time."""
 
-    def _read(self, timeout: Optional[float]) -> Optional[str]:
+    def _read(self, timeout: float | None) -> str | None:
         _timeout = Timeout(timeout)
 
         with error_check("Could not read from serial device"):
@@ -70,27 +71,29 @@ class _FastSlcanBus(slcanBus):
         return None
 
 
+@register_bus("slcan_serial")
 class SlcanSerial(CANBus):
     """SLCAN-over-serial CAN bus.
 
-    ``port``      serial device path (``/dev/ttyTHS1``, ``/dev/ttyACM0``, …).
-    ``baudrate``  UART line rate (default 115200; 2 000 000 for WaveShare).
+    ``channel``    serial device path (``/dev/ttyTHS1``, ``/dev/ttyACM0``, …).
+    ``baudrate``  UART line rate (default 115200; 2 000 000 for the CH340
+                  WaveShare and 1 500 000 for the FT232R one).
     ``bitrate``   CAN bitrate negotiated by the slcan adapter.
     """
 
     def __init__(
         self,
-        port: str,
+        channel: str,
         event_bus: EventBus,
         bitrate: int = 1_000_000,
         baudrate: int = 115_200,
     ) -> None:
-        super().__init__(name=f"slcan:{port}", event_bus=event_bus)
-        self.port = port
-        self.bitrate = bitrate
+        super().__init__(name=f"slcan:{channel}", event_bus=event_bus)
+        self.port = channel
         self.baudrate = baudrate
-        self._bus: Optional[can.BusABC] = None
-        self._notifier: Optional[can.Notifier] = None
+        self.bitrate = bitrate
+        self._bus: can.BusABC | None = None
+        self._notifier: can.Notifier | None = None
 
     def _open(self) -> None:
         try:
@@ -108,54 +111,33 @@ class SlcanSerial(CANBus):
             ) from exc
 
         self._notifier = can.Notifier(
-            self._bus, [FrameListener(self._publish_frame, self._emit_status)], timeout=0.1,
+            self._bus,
+            [FrameListener(self._publish_frame)],
+            timeout=0.1,
         )
 
     def _close(self) -> None:
         if self._notifier is not None:
             try:
                 self._notifier.stop()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 pass
             self._notifier = None
         if self._bus is not None and hasattr(self._bus, "shutdown"):
             try:
                 self._bus.shutdown()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 pass
         self._bus = None
 
-    def send_remote_frame(self, can_id: int) -> None:
+    def _send_message(self, msg: can.Message) -> None:
         if self._bus is None:
             raise CANBusError("bus not open")
-        msg = can.Message(
-            arbitration_id=can_id,
-            is_extended_id=can_id > 0x7FF,
-            is_remote_frame=True,
-            dlc=0,
-            data=b"",
-        )
         try:
             self._bus.send(msg, timeout=1.0)
         except can.CanError as exc:
-            raise CANBusError(f"send remote 0x{can_id:X} failed: {exc}") from exc
+            raise CANBusError(f"send 0x{msg.arbitration_id:X} failed: {exc}") from exc
 
-    def send_data_frame(self, can_id: int, data: bytes) -> None:
-        if self._bus is None:
-            raise CANBusError("bus not open")
-        msg = can.Message(
-            arbitration_id=can_id,
-            is_extended_id=can_id > 0x7FF,
-            is_remote_frame=False,
-            dlc=len(data),
-            data=bytes(data),
-        )
-        try:
-            self._bus.send(msg, timeout=1.0)
-        except can.CanError as exc:
-            raise CANBusError(f"send data 0x{can_id:X} failed: {exc}") from exc
-
-    def set_filters(self, filters) -> None:
-        if self._bus is not None and hasattr(self._bus, "set_filters"):
-            return self._bus.set_filters(filters)
-        return None
+    def set_filters(self, filters: Any) -> None:
+        if self._bus is not None:
+            self._bus.set_filters(filters)

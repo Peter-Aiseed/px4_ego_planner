@@ -1,68 +1,47 @@
-"""Factory for instantiating a CAN bus by name."""
+"""Factory for instantiating a CAN bus by name.
+
+Bus backends **self-register** by decorating their class with
+:func:`register_bus` at module-import time.  Discovery is handled by the
+generic :class:`~can_host._plugin_manager.PluginManager` — adding a new transport
+requires only a new module, **this file never needs to be edited** to
+register a bus.
+
+A backend with an optional dependency (e.g. ``gs-usb``) is imported lazily
+during discovery; if the module fails to import the backend is skipped with a
+warning rather than aborting the run.
+"""
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any
 
+from .._plugin_manager import PluginManager
 from ..events import EventBus
-from .auto import AutoCANBus
 from .base import CANBus
-from .slcan_serial import SlcanSerial
-from .socketcan import SocketCANBus
-from .waveshare import WaveShareUSBCAN
+
+_buses: PluginManager[CANBus] = PluginManager("can_host.can_bus", "bus")
+
+#: Alias so bus backends can do ``@register_bus("name")``.
+register_bus = _buses.register
+
+
+def list_registered_buses() -> list[str]:
+    """Return all registered bus backend names."""
+    return _buses.list_registered()
 
 
 def create_can_bus(
     kind: str,
     *,
-    channel: str,
     event_bus: EventBus,
-    bitrate: int = 1_000_000,
-    no_config: bool = False,
-    no_filter: bool = False,
-    raw_debug: bool = False,
-    index: int = 0,
-    baudrate: int = 2_000_000,
+    **kwargs: Any,
 ) -> CANBus:
-    """Return a :class:`CANBus` instance for the requested transport.
+    """Instantiate a bus backend by registered name.
 
-    ``kind`` is one of ``"auto"``, ``"socketcan"``, ``"waveshare"``,
-    ``"gs_usb"``, ``"slcan"``, ``"uart"``, or ``"uavcan"``.
+    *kwargs* are filtered to the backend class's accepted parameters via
+    :func:`inspect.signature`, so each backend only receives the parameters
+    it declares — no special-casing per transport.
 
-    * ``"auto"`` ignores ``channel`` and picks the first known USB adapter
-      (gs_usb → slcan → SocketCAN fallback).
-    * ``"uart"`` / ``"slcan"`` / ``"uavcan"`` use the slcan ASCII protocol
-      over a serial port (``channel`` = ``/dev/ttyTHS1`` …).
-      ``baudrate`` is the UART line rate (default 115200 for uart/slcan).
-    * ``"waveshare"`` uses the WaveShare USB-CAN-A binary protocol over a
-      serial port (``channel`` = COM port / ``/dev/ttyUSB0``).
+    Raises :class:`ValueError` if *kind* is not a registered backend.
     """
-
-    if kind == "auto":
-        return AutoCANBus(
-            event_bus=event_bus, bitrate=bitrate, index=index, baudrate=baudrate,
-        )
-    if kind == "socketcan":
-        return SocketCANBus(
-            channel=channel,
-            event_bus=event_bus,
-            bitrate=bitrate,
-            no_filter=no_filter,
-        )
-    if kind == "waveshare":
-        return WaveShareUSBCAN(
-            channel=channel,
-            event_bus=event_bus,
-            bitrate=bitrate,
-            no_config=no_config,
-            raw_debug=raw_debug,
-        )
-    if kind == "gs_usb":
-        from ._gsusb import GsUsbBus
-        return GsUsbBus(channel=channel, event_bus=event_bus, bitrate=bitrate)
-    if kind in ("slcan", "uart", "uavcan"):
-        # slcan: plain serial-line CAN (MCP2515-on-UART, CAN-BUS shield, …)
-        # uart: UART CAN (Jetson ttyTHS1)
-        # uavcan: same physical layer as slcan; protocol handled by UAVCAN device
-        return SlcanSerial(port=channel, event_bus=event_bus, bitrate=bitrate, baudrate=baudrate)
-    raise ValueError(f"Unknown CAN bus kind: {kind!r}")
+    return _buses.create(kind, event_bus, **kwargs)

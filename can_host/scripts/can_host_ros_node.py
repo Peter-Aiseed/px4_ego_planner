@@ -12,10 +12,11 @@ import rospy
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs import point_cloud2
 
-from can_host.main import parse_args, resolve_baudrate_if_needed
-from can_host.host import Host
+from can_host.devices._afbr_parser import parse_can_id_list
+from can_host.devices.measurements import AFBRMeasurement, UAVCANRangeMeasurement
 from can_host.events import DeviceMeasurement
-from can_host.devices._afbr_parser import AFBRParser, parse_can_id_list
+from can_host.host import ExitCode, Host
+from can_host.main import parse_args
 
 
 class RosPublisher:
@@ -52,44 +53,33 @@ class RosPublisher:
         return point_cloud2.create_cloud_xyz32(header, [(range_m, 0.0, 0.0)])
 
     def on_measurement(self, event: DeviceMeasurement) -> None:
-        if event.kind == "afbr":
-            self._publish_afbr(event)
-        elif event.kind == "uavcan":
-            self._publish_uavcan(event)
-
-    def _publish_afbr(self, event: DeviceMeasurement) -> None:
-        can_id = event.frame.arbitration_id
-        if self.show_ids is not None and can_id not in self.show_ids:
-            return
         meas = event.measurement
-        range_m = meas.range_mm / 1000.0
-        frame_id = f"{self.frame_id_prefix}_0x{can_id:02x}_link"
-        cloud = self._make_cloud(frame_id, range_m)
-        self._get_publisher(self.afbr_topic, can_id).publish(cloud)
-
-    def _publish_uavcan(self, event: DeviceMeasurement) -> None:
-        meas = event.measurement
-        if meas.get("measurement_type") != "range":
+        if meas.measurement_type != "range":
             return  # skip node_status/flow/allocation
-        node_id = meas.get("id", 0)
-        if self.show_ids is not None and node_id not in self.show_ids:
+        if self.show_ids is not None and meas.id not in self.show_ids:
             return
-        data = meas.get("data", {})
-        range_m = data.get("range_mm", 0) / 1000.0
-        frame_id = f"{self.uavcan_frame_id_prefix}_0x{node_id:02x}_link"
-        cloud = self._make_cloud(frame_id, range_m)
-        self._get_publisher(self.uavcan_topic, node_id).publish(cloud)
+
+        if event.kind == "afbr" and isinstance(meas, AFBRMeasurement):
+            frame_id = f"{self.frame_id_prefix}_0x{meas.id:02x}_link"
+            self._get_publisher(self.afbr_topic, meas.id).publish(
+                self._make_cloud(frame_id, meas.range_mm / 1000.0)
+            )
+        elif event.kind == "uavcan" and isinstance(meas, UAVCANRangeMeasurement):
+            frame_id = f"{self.uavcan_frame_id_prefix}_0x{meas.id:02x}_link"
+            self._get_publisher(self.uavcan_topic, meas.id).publish(
+                self._make_cloud(frame_id, meas.range_m)
+            )
 
 
 def main() -> int:
     sys.argv = rospy.myargv(sys.argv)   # strip roslaunch's __name:=, __log:= etc.
-    args = parse_args()                 # reuses can_host's original CLI parser as-is
+    args = parse_args()                 # reuses can_host's CLI parser as-is
 
+    # Mirror can_host.main: pre-parse the ID specs the Host/device factories expect.
     if args.can_ids:
-        AFBRParser.FRAME_ID_1D = parse_can_id_list(args.can_ids)
+        args.can_ids_list = parse_can_id_list(args.can_ids)
     show_ids = parse_can_id_list(args.show_ids) if args.show_ids else None
     args.show_ids_list = show_ids
-    args.baudrate = resolve_baudrate_if_needed(args)
 
     rospy.init_node("can_host_ros", disable_signals=True)
 
@@ -100,7 +90,7 @@ def main() -> int:
 
     host = Host(args)
     rc = host.setup()
-    if rc != 0:
+    if rc != ExitCode.OK:
         return rc
 
     ros_pub = RosPublisher(
@@ -110,7 +100,7 @@ def main() -> int:
         uavcan_frame_id_prefix=uavcan_frame_id_prefix,
         show_ids=show_ids,
     )
-    host.event_bus.on("measurement", ros_pub.on_measurement)
+    host.event_bus.subscribe("measurement", ros_pub.on_measurement)
 
     return host.run()
 

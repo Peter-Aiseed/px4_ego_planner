@@ -11,9 +11,16 @@ from __future__ import annotations
 import abc
 import logging
 import threading
-from typing import Optional
+from typing import Any
 
-from ..events import CANFrame, EventBus, StatusEvent
+from ..events import CANFrame, EventBus
+
+try:
+    import can
+    from can.typechecking import CanFilter
+except Exception:  # noqa: BLE001
+    can = None  # type: ignore[assignment]
+    CanFilter = Any  # type: ignore[assignment,misc]
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +33,6 @@ class CANBus(abc.ABC):
     """Common interface for every CAN transport."""
 
     EVENT_FRAME = "frame"
-    EVENT_STATUS = "status"
 
     def __init__(self, name: str, event_bus: EventBus) -> None:
         self.name = name
@@ -51,7 +57,7 @@ class CANBus(abc.ABC):
             logger.info("Opening CAN bus %s", self.name)
             self._open()
             self._opened = True
-        self._emit_status("info", f"opened {self.name}")
+        logger.info("CAN bus %s opened", self.name)
 
     def close(self) -> None:
         with self._lock:
@@ -62,24 +68,50 @@ class CANBus(abc.ABC):
                 self._close()
             finally:
                 self._opened = False
-        self._emit_status("info", f"closed {self.name}")
+        logger.info("CAN bus %s closed", self.name)
 
     # ---- sending -------------------------------------------------------
 
     @abc.abstractmethod
+    def _send_message(self, msg: Any) -> None:
+        """Backend-specific send (can.Message or equivalent)."""
+
+    @staticmethod
+    def _make_message(can_id: int, data: bytes = b"", is_remote: bool = False) -> Any:
+        """Create a python-can Message (requires ``can`` extra)."""
+        if can is None:
+            raise RuntimeError("python-can is required for message creation")
+        return can.Message(
+            arbitration_id=can_id,
+            is_extended_id=can_id > 0x7FF,
+            is_remote_frame=is_remote,
+            dlc=len(data),
+            data=bytes(data) if not is_remote else b"",
+        )
+
     def send_remote_frame(self, can_id: int) -> None:
         """Send a CAN RTR (remote) frame."""
+        self._send_message(self._make_message(can_id, is_remote=True))
 
     def send_data_frame(self, can_id: int, data: bytes) -> None:
-        raise CANBusError(f"{type(self).__name__} does not implement data frames")
+        """Send a CAN data frame."""
+        self._send_message(self._make_message(can_id, data, is_remote=False))
+
+    # ---- filters -------------------------------------------------------
+
+    def set_filters(self, filters: Any) -> None:
+        """Install hardware acceptance filters, e.g. ``[{"can_id": 0x1C, "can_mask": 0x7FF}]``.
+
+        Backends that cannot filter in hardware ignore the request and keep
+        passing every frame up; overriding implementations are free to apply
+        the filters late (next open) rather than immediately.  Failures are
+        logged, never raised, since filtering is an optimisation.
+        """
 
     # ---- helpers -------------------------------------------------------
 
     def _publish_frame(self, frame: CANFrame) -> None:
         self.events.emit(self.EVENT_FRAME, frame)
-
-    def _emit_status(self, level: str, message: str) -> None:
-        self.events.emit(self.EVENT_STATUS, StatusEvent(self.name, level, message))
 
     @property
     def is_open(self) -> bool:

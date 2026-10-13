@@ -9,14 +9,21 @@ The file is written only when a *new* node ID is allocated, and again on
 ``flush()`` (called at shutdown) to record the final last-seen timestamp.
 Repeated ``mark_seen`` calls only update the in-memory timestamp without
 triggering disk I/O.
+
+Writes go through a temp file + ``os.replace`` so a crash mid-write can
+never corrupt the store (which would silently start reusing node IDs).
 """
 
 from __future__ import annotations
 
 import json
+import logging
+import os
+import tempfile
 import time
 from pathlib import Path
-from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_PATH = Path(__file__).resolve().parent.parent / "uavcan_node_ids.json"
 
@@ -26,8 +33,9 @@ class NodeIDStore:
 
     def __init__(self, path: Path = DEFAULT_PATH) -> None:
         self._path = Path(path)
-        self._data: dict[str, dict] = {}
+        self._data: dict[str, dict[str, float | int]] = {}
         self._used_ids: set[int] = set()
+        self._nid_to_uid: dict[int, str] = {}  # reverse index: node_id -> unique_id
         self._dirty: bool = False  # True when in-memory state needs flushing
         self._load()
 
@@ -51,27 +59,37 @@ class NodeIDStore:
                             "node_id": nid,
                             "last_seen": last_seen,
                         }
+                        if not uid.startswith("_node_"):
+                            self._nid_to_uid[nid] = uid
         except (json.JSONDecodeError, ValueError, OSError):
             pass
 
     def _save(self) -> None:
         """Write current state to disk.  Called only on allocation or flush()."""
+        self._path.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(
+            dir=self._path.parent, prefix=self._path.name, suffix=".tmp"
+        )
         try:
-            self._path.parent.mkdir(parents=True, exist_ok=True)
-            self._path.write_text(
-                json.dumps(self._data, indent=2, sort_keys=True),
-                encoding="utf-8",
-            )
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(self._data, f, indent=2, sort_keys=True)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, self._path)
             self._dirty = False
-        except OSError:
-            pass
+        except OSError as exc:
+            logger.warning("failed to persist node ID store %s: %s", self._path, exc)
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
 
     def flush(self) -> None:
         """Persist the final last-seen timestamps.  Call at shutdown."""
         if self._dirty:
             self._save()
 
-    def get(self, unique_id: str) -> Optional[int]:
+    def get(self, unique_id: str) -> int | None:
         """Return the previously allocated node_id for this UID, or None."""
         entry = self._data.get(unique_id)
         if entry is None:
@@ -79,7 +97,7 @@ class NodeIDStore:
         # Skip placeholder entries (_node_*)
         if unique_id.startswith("_node_"):
             return None
-        return entry["node_id"]
+        return int(entry["node_id"])
 
     def get_last_seen(self, unique_id: str) -> float:
         entry = self._data.get(unique_id)
@@ -92,6 +110,8 @@ class NodeIDStore:
             "last_seen": time.time(),
         }
         self._used_ids.add(node_id)
+        if not unique_id.startswith("_node_"):
+            self._nid_to_uid[node_id] = unique_id
         self._dirty = True
         self._save()
 
@@ -107,15 +127,17 @@ class NodeIDStore:
                 "last_seen": time.time(),
             }
             self._used_ids.add(node_id)
+            if not unique_id.startswith("_node_"):
+                self._nid_to_uid[node_id] = unique_id
             self._dirty = True
 
     def mark_seen_by_node_id(self, node_id: int) -> None:
         """Record that ``node_id`` is currently active.  In-memory only."""
-        for uid, entry in self._data.items():
-            if entry["node_id"] == node_id:
-                entry["last_seen"] = time.time()
-                self._dirty = True
-                return
+        uid = self._nid_to_uid.get(node_id)
+        if uid is not None:
+            self._data[uid]["last_seen"] = time.time()
+            self._dirty = True
+            return
         placeholder_uid = f"_node_{node_id}"
         self._data[placeholder_uid] = {
             "node_id": node_id,
@@ -134,7 +156,7 @@ class NodeIDStore:
         raise RuntimeError(f"No free node ID in range {start}-{end}")
 
     @property
-    def entries(self) -> dict[str, dict]:
+    def entries(self) -> dict[str, dict[str, float | int]]:
         return dict(self._data)
 
     @property

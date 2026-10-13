@@ -1,159 +1,141 @@
 """Auto-detecting CAN bus.
 
-Tries, in priority order:
-
-1. USB-detected CAN adapters (gs_usb native → WaveShare → serial slcan).
-2. UART CAN adapters (``/dev/ttyTHS*`` on Jetson).
-3. SocketCAN interfaces (``can0``, …).
+Walks the candidate list from :func:`can_host.usb_scan.list_candidates` in
+priority order — USB-detected CAN adapters (gs_usb native → WaveShare →
+serial slcan_serial) → SocketCAN interfaces (``can0``, ``can1``, …) → UART
+CAN adapters (``/dev/ttyTHS*`` on Jetson). That list is shared with
+``--bus <name>``, so ``--index`` means the same adapter for both.
 
 If a native ``gs_usb`` open fails because userspace can't claim the device
-(missing udev rule / permissions), it transparently falls back to the
-SocketCAN interface the same kernel driver already created.
-
-A new transport only needs to:
-  * add a row to :data:`can_host.usb_scan._KNOWN`, and
-  * add a case in :meth:`AutoCANBus._instantiate`.
+(missing udev rule / permissions), it transparently falls back to the next
+candidate in the discovery chain (typically the SocketCAN interface the same
+kernel driver already created).
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
-from ..events import CANFrame, EventBus
+from ..events import EventBus
 from ..usb_scan import (
     AdapterMatch,
-    detect_adapters,
-    list_socketcan_interfaces,
-    list_uart_can_devices,
+    bus_name_for_backend,
+    list_candidates,
+    resolve_baudrate,
 )
 from .base import CANBus, CANBusError
-from .slcan_serial import SlcanSerial
-from .socketcan import SocketCANBus
+from .factory import create_can_bus, register_bus
 
 logger = logging.getLogger(__name__)
 
 
+@register_bus("auto")
 class AutoCANBus(CANBus):
-    """Picks a known CAN adapter; falls back to ``can0`` / UART."""
+    """Picks a known CAN adapter; falls back through the discovery chain."""
 
     def __init__(
         self,
         event_bus: EventBus,
         bitrate: int = 1_000_000,
-        prefer: Optional[str] = None,
+        prefer: str | None = None,
         index: int = 0,
-        baudrate: int = 115200,
+        baudrate: int | None = None,
     ) -> None:
         super().__init__(name="auto", event_bus=event_bus)
         self.bitrate = bitrate
         self.prefer = prefer
         self.index = index
         self._baudrate = baudrate
-        self._inner: Optional[CANBus] = None
-        self._match: Optional[AdapterMatch] = None
+        self._inner: CANBus | None = None
+        self._match: AdapterMatch | None = None
 
-    # -- selection ---------------------------------------------------------
+    # -- discovery ---------------------------------------------------------
 
-    def _pick(self) -> CANBus:
-        """Run the detection priority chain and return a concrete bus."""
-        adapters = detect_adapters()
+    def _ordered_candidates(self) -> list[AdapterMatch]:
+        """Candidates from :func:`usb_scan.list_candidates`, ``--prefer`` applied.
+
+        Detection itself lives in :mod:`can_host.usb_scan` and is shared with
+        ``--bus <name>``, so ``--bus auto --index N`` and
+        ``--bus <name> --index N`` count the same adapters. ``--prefer`` is
+        matched against the ``--bus`` name an adapter would be opened with, so
+        ``--prefer slcan_serial`` also pulls forward on-board UART CAN ports.
+        """
+        candidates = list_candidates()
         if self.prefer:
-            adapters = [a for a in adapters if a.backend == self.prefer] + adapters
+            preferred = [
+                c for c in candidates if bus_name_for_backend(c.backend) == self.prefer
+            ]
+            others = [
+                c for c in candidates if bus_name_for_backend(c.backend) != self.prefer
+            ]
+            candidates = preferred + others
+        return candidates
 
-        # 1. USB-detected adapter (respect the user's --index).
-        if self.index < len(adapters):
-            return self._instantiate(adapters[self.index])
+    def _resolve_baudrate(self, m: AdapterMatch) -> int:
+        """UART line rate to use for one candidate adapter.
 
-        # 2. UART CAN on embedded boards (Jetson ttyTHS*, TI ttyO*).
-        uart_matches = list_uart_can_devices()
-        if self.index < len(uart_matches):
-            m = uart_matches[self.index]
-            self._match = m
-            return SlcanSerial(
-                port=m.channel, event_bus=self.events,
-                bitrate=self.bitrate, baudrate=self._baudrate,
-            )
-
-        # 3. SocketCAN interfaces (can0, can1, …).
-        sc = list_socketcan_interfaces()
-        if sc:
-            ch = sc[self.index] if self.index < len(sc) else sc[0]
-            self._match = AdapterMatch(
-                device=None,  # type: ignore[arg-type]
-                backend="socketcan",
-                channel=ch,
-                label="SocketCAN (no USB/UART adapter matched)",
-            )
-            return SocketCANBus(channel=ch, event_bus=self.events, bitrate=self.bitrate)
-
-        raise CANBusError(
-            "no CAN adapter detected and no active SocketCAN interface. "
-            "Run with --list to see what was scanned."
-        )
+        With ``--bus auto`` the adapter is only known once the bus is being
+        opened, so the rate is resolved here instead of up front: it has to
+        follow the adapter actually selected by ``--index``, since two
+        revisions of the same adapter run at different line rates and a
+        "first known adapter wins" lookup hands the FT232R the CH340's rate.
+        An explicit ``--baudrate`` still wins.
+        """
+        vid_pid = (m.device.vid, m.device.pid) if m.device is not None else None
+        return resolve_baudrate(m.channel, self._baudrate, vid_pid)
 
     def _instantiate(self, m: AdapterMatch) -> CANBus:
-        """Create the concrete bus for a detected USB adapter match."""
+        """Create the concrete bus for a detected adapter match."""
         self._match = m
-        backend = m.backend
-
-        if backend == "gs_usb":
-            try:
-                import can
-            except ImportError:
-                raise CANBusError("python-can is not installed") from None
-            from ._gsusb import GsUsbBus
-            return GsUsbBus(channel=m.channel, event_bus=self.events, bitrate=self.bitrate)
-
-        if backend == "slcan":
-            return SlcanSerial(
-                port=m.channel, event_bus=self.events,
-                bitrate=self.bitrate, baudrate=self._baudrate,
-            )
-
-        if backend == "waveshare":
-            from .waveshare import WaveShareUSBCAN
-            return WaveShareUSBCAN(
-                channel=m.channel, event_bus=self.events,
-                bitrate=self.bitrate, no_config=False, raw_debug=False,
-            )
-
-        if backend == "socketcan":
-            return SocketCANBus(channel=m.channel, event_bus=self.events, bitrate=self.bitrate)
-
-        raise CANBusError(f"unsupported backend: {backend!r}")
+        return create_can_bus(
+            bus_name_for_backend(m.backend),
+            channel=m.channel,
+            event_bus=self.events,
+            bitrate=self.bitrate,
+            baudrate=self._resolve_baudrate(m),
+        )
 
     # -- lifecycle ---------------------------------------------------------
 
     def _open(self) -> None:
-        try:
-            self._inner = self._pick()
-            ch = self._match.channel if self._match else "?"
-            self.name = f"auto[{type(self._inner).__name__}:{ch}]"
-            logger.info("Auto-selected %s (%s)", self._match.backend if self._match else "?", ch)
-            self._inner.open()
-        except CANBusError as exc:
-            # Self-heal: if a native gs_usb open failed because userspace
-            # can't claim the device (permissions / missing udev rule), fall
-            # back to the SocketCAN interface the same kernel driver already
-            # created.
-            if self._match and self._match.backend == "gs_usb":
-                sc = list_socketcan_interfaces()
-                if sc:
-                    logger.warning("gs_usb open failed (%s); falling back to SocketCAN %s", exc, sc[0])
-                    self._match = AdapterMatch(
-                        device=self._match.device,
-                        backend="socketcan",
-                        channel=sc[0],
-                        label="SocketCAN (fallback: gs_usb permission denied)",
-                    )
-                    self._inner = SocketCANBus(
-                        channel=sc[0], event_bus=self.events, bitrate=self.bitrate,
-                    )
-                    self.name = f"auto[SocketCANBus:{sc[0]}]"
-                    self._inner.open()
-                    return
-            raise
+        """Try candidates in priority order until one opens."""
+        candidates = self._ordered_candidates()
+
+        if not candidates:
+            raise CANBusError(
+                "no CAN adapter detected and no active SocketCAN interface. "
+                "Run with --list to see what was scanned."
+            )
+
+        if self.index >= len(candidates):
+            raise CANBusError(
+                f"adapter index {self.index} out of range for "
+                f"{len(candidates)} detected candidate(s). "
+                "Run with --list to see what was scanned."
+            )
+
+        last_error: CANBusError | None = None
+        for match in candidates[self.index :]:
+            try:
+                self._inner = self._instantiate(match)
+                channel = match.channel
+                self.name = f"auto[{type(self._inner).__name__}:{channel}]"
+                logger.info("Auto-selected %s (%s)", match.backend, channel)
+                self._inner.open()
+                return
+            except (CANBusError, ValueError) as exc:
+                last_error = CANBusError(str(exc))
+                logger.warning(
+                    "Auto-selected %s (%s) failed to open: %s",
+                    match.backend,
+                    match.channel,
+                    exc,
+                )
+
+        if last_error is not None:
+            raise last_error
+        raise CANBusError("no usable CAN adapter found")
 
     def _close(self) -> None:
         if self._inner is not None:
@@ -172,12 +154,15 @@ class AutoCANBus(CANBus):
             raise CANBusError("bus not open")
         self._inner.send_data_frame(can_id, data)
 
+    def _send_message(self, msg: Any) -> None:
+        if self._inner is None:
+            raise CANBusError("bus not open")
+        self._inner._send_message(msg)
+
     def set_filters(self, filters: Any) -> None:
-        if self._inner is not None and hasattr(self._inner, "set_filters"):
+        if self._inner is not None:
             self._inner.set_filters(filters)
-            return
-        return None
 
     @property
-    def selected(self) -> Optional[AdapterMatch]:
+    def selected(self) -> AdapterMatch | None:
         return self._match
